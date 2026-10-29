@@ -66,6 +66,8 @@ export function App() {
   const recent = useRef<string[]>([]);
   const sessionRef = useRef<Session | null>(null);
   const booted = useRef(false);
+  /** session + win created by the latest "Help me start", undone if the reply turns out to be a safety one */
+  const justStarted = useRef<{ sessionId: string; winId: string } | null>(null);
 
   // keep display settings applied
   useEffect(() => {
@@ -126,9 +128,20 @@ export function App() {
         store.settings,
       );
       if (r.mode === 'safety' && r.safety) {
+        // The helper noticed something the on-device check missed. The words that
+        // started this session must not be kept: undo the session and its win.
+        const js = justStarted.current;
+        const cur = sessionRef.current;
+        if (js && cur && cur.id === js.sessionId && cur.steps.length === 0) {
+          await persistSession(null);
+          await actions.removeWin(js.winId);
+        }
+        justStarted.current = null;
+        recent.current = [];
         showSafety(r.safety);
         return;
       }
+      justStarted.current = null;
       const next = addStep(sessionRef.current ?? s, r);
       await persistSession(next);
       recent.current = [...recent.current, ...(r.lead ? [r.lead] : []), r.next_step].slice(-8);
@@ -159,9 +172,11 @@ export function App() {
       const reuse = cur && !cur.endedAt && Date.now() - cur.lastActiveAt < 3 * 3_600_000 && (!task || task === cur.task);
       if (!reuse) {
         await closeSession('drifted');
-        await persistSession(startSession(task, energy, store.settings.taskTab?.title || undefined));
+        const fresh = startSession(task, energy, store.settings.taskTab?.title || undefined);
+        await persistSession(fresh);
         recent.current = [];
-        await actions.addWin('started', `Started ${task || store.settings.taskTab?.title || 'something hard'}`);
+        const winId = await actions.addWin('started', `Started ${task || store.settings.taskTab?.title || 'something hard'}`);
+        justStarted.current = { sessionId: fresh.id, winId };
       } else if (cur && cur.energy !== energy) {
         await persistSession({ ...cur, energy });
       }

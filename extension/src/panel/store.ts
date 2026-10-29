@@ -80,10 +80,15 @@ export const actions = {
   async updateSettings(patch: Partial<Settings>) {
     await mutate('settings', (s) => ({ ...s, ...patch }));
   },
-  async addWin(kind: Win['kind'], label: string, strategyId?: string) {
-    const wins = await mutate('wins', (w) => [...w, { id: uid('w_'), t: Date.now(), kind, label: label.slice(0, 160), strategyId }]);
+  async addWin(kind: Win['kind'], label: string, strategyId?: string): Promise<string> {
+    const id = uid('w_');
+    const wins = await mutate('wins', (w) => [...w, { id, t: Date.now(), kind, label: label.slice(0, 160), strategyId }]);
     // themes unlock by total attempts — never lost
     await mutate('settings', (s) => ({ ...s, unlockedThemes: Array.from(new Set([...s.unlockedThemes, ...unlockedFor(wins.length)])) }));
+    return id;
+  },
+  async removeWin(id: string) {
+    await mutate('wins', (w) => w.filter((x) => x.id !== id));
   },
   async feedback(strategyId: string, fb: 'up' | 'down' | 'skip') {
     if (!strategyId) return;

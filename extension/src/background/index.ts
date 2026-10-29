@@ -1,22 +1,13 @@
 import {
   EMPTY_CONTEXT,
+  ELSEWHERE_HOST,
   type RawEvent,
   applyBridgeRequest,
-  blockSample,
-  breakRanLong,
-  canAutoNudge,
-  canShowChip,
-  computeBaseline,
-  computeWindow,
   dayKey,
   defaultStorage,
-  detectRestuck,
   hostOf,
-  inferState,
   isCallHost,
   isExcluded,
-  isLearning,
-  makeInference,
   markDismissed,
   markNudged,
   rollover,
@@ -24,18 +15,14 @@ import {
   snapshotOf,
   copy,
   uid,
-  HYDRATION_AFTER_FLOW_MIN,
-  MIN,
   type BridgeRequest,
-  type GuardContext,
-  type Inference,
   type Settings,
-  type StorageShape,
-  type UserState,
 } from '@nudge/shared';
-import { getSession, getStore, mutate, replaceAll, setKeys, setSession, type PanelIntent, type SessionState } from '../lib/storage';
+import { getSession, getStore, mutate, replaceAll, setKeys, setSession, type PanelIntent } from '../lib/storage';
 import type { OverlayActionId, OverlaySpec, ToBackground, ToContent } from '../lib/messages';
-import { checkinChip, depletedNudge, hydrationChip, longBreakChip, restuckChip, stuckNudge, timeAnchorChip, wakeNudge } from './overlays';
+import { depletedNudge, longBreakChip, restuckChip, stuckNudge, wakeNudge } from './overlays';
+import { planTick } from './plan';
+import { adoptPinned, forgetClosedTab, isTaskTab, refreshPinned } from './pinned';
 
 // ───────────────────────── Service worker ─────────────────────────
 // MV3 workers are short-lived: every listener is registered synchronously at
@@ -43,10 +30,6 @@ import { checkinChip, depletedNudge, hydrationChip, longBreakChip, restuckChip, 
 // transient, memory-only). A 30 s alarm computes features and deletes raw events.
 
 const TICK = 'nudge-tick';
-const WINDOW_ID_NONE_HOST = 'elsewhere';
-const FEATURE_KEEP_MS = 2 * 60 * MIN;
-const BLOCK_MS = 5 * MIN;
-const MAX_SAMPLES = 3000;
 const PANEL_ACTIONS: OverlayActionId[] = ['help', 'break', 'stuck_again', 'taking_break', 'come_back', 'call_it_day', 'open_panel'];
 
 let lastFocusedWindowId: number | null = null;
@@ -67,8 +50,22 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     await replaceAll(defaultStorage(Date.now()));
     await chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
   }
+  // tabs that were already open (including the task tab!) don't get content
+  // scripts automatically — add them now so counting and nudges work right away
+  await injectIntoOpenTabs();
   await ensureRuntime();
 });
+
+async function injectIntoOpenTabs(): Promise<void> {
+  const tabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] }).catch(() => [] as chrome.tabs.Tab[]);
+  await Promise.all(
+    tabs.map((t) =>
+      t.id === undefined || t.discarded
+        ? undefined
+        : chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['content.js'] }).catch(() => undefined),
+    ),
+  );
+}
 
 chrome.runtime.onStartup.addListener(() => {
   void ensureRuntime();
@@ -96,52 +93,50 @@ async function pushEvent(ev: RawEvent): Promise<void> {
   });
 }
 
-function isTaskTab(settings: Settings, tabId: number, host: string): boolean {
-  const pinned = settings.taskTab;
-  if (!pinned) return false;
-  if (pinned.tabId !== null && pinned.tabId === tabId) return true;
-  // pinned tab closed or reopened: treat the same site as the task
-  return !!pinned.host && pinned.host === host;
-}
-
-async function recordActivation(tabId: number, url: string | undefined): Promise<void> {
+async function recordActivation(tabId: number, url: string | undefined, title?: string): Promise<void> {
   const { settings } = await getStore();
   if (settings.trackingPaused) return;
   let host = hostOf(url);
   if (isExcluded(host, settings.excludedSites)) host = 'excluded';
-  await pushEvent({ t: Date.now(), kind: 'activate', tabId, host, isTaskTab: host !== 'excluded' && isTaskTab(settings, tabId, host) });
+  // pinned tab was closed and the same site reopened: this is the task tab now
+  const adopted = adoptPinned(settings.taskTab, tabId, host, title);
+  if (adopted !== settings.taskTab) await mutate('settings', (s) => ({ ...s, taskTab: adoptPinned(s.taskTab, tabId, host, title) }));
+  await pushEvent({ t: Date.now(), kind: 'activate', tabId, host, isTaskTab: isTaskTab(adopted, tabId, host) });
 }
 
 chrome.tabs.onActivated.addListener(({ tabId, windowId }) => {
   lastFocusedWindowId = windowId;
-  void chrome.tabs.get(tabId).then((t) => recordActivation(tabId, t.url ?? t.pendingUrl), () => undefined);
+  void chrome.tabs.get(tabId).then((t) => recordActivation(tabId, t.url ?? t.pendingUrl, t.title), () => undefined);
 });
 
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   if (!info.url && !info.title) return;
   void (async () => {
     const { settings } = await getStore();
-    // keep the pinned task tab's title fresh (the only title we ever store, chosen by the user)
-    if (settings.taskTab?.tabId === tabId && info.title) {
-      await mutate('settings', (s) => ({ ...s, taskTab: s.taskTab ? { ...s.taskTab, title: info.title!, host: hostOf(tab.url) || s.taskTab.host } : s.taskTab }));
+    // keep the pinned task tab's title fresh (the only title we ever store, chosen
+    // by the user) — but never adopt the title of a site it navigated away to
+    const host = hostOf(tab.url);
+    if (refreshPinned(settings.taskTab, tabId, host, info.title) !== settings.taskTab) {
+      await mutate('settings', (s) => ({ ...s, taskTab: refreshPinned(s.taskTab, tabId, host, info.title) }));
     }
-    if (info.url && tab.active) await recordActivation(tabId, info.url);
+    // same-tab navigation (incl. single-page apps) can change the site you're on
+    if (info.url && tab.active) await recordActivation(tabId, info.url, tab.title);
   })();
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
-  void mutate('settings', (s) => (s.taskTab?.tabId === tabId ? { ...s, taskTab: { ...s.taskTab, tabId: null } } : s));
+  void mutate('settings', (s) => ({ ...s, taskTab: forgetClosedTab(s.taskTab, tabId) }));
 });
 
 chrome.windows.onFocusChanged.addListener((windowId) => {
   if (windowId === chrome.windows.WINDOW_ID_NONE) {
     // browser unfocused: not on task, not on escape — just "elsewhere"
-    void pushEvent({ t: Date.now(), kind: 'activate', tabId: -1, host: WINDOW_ID_NONE_HOST, isTaskTab: false });
+    void pushEvent({ t: Date.now(), kind: 'activate', tabId: -1, host: ELSEWHERE_HOST, isTaskTab: false });
     return;
   }
   lastFocusedWindowId = windowId;
   void chrome.tabs.query({ active: true, windowId }).then(([t]) => {
-    if (t?.id !== undefined) void recordActivation(t.id, t.url);
+    if (t?.id !== undefined) void recordActivation(t.id, t.url, t.title);
   });
 });
 
@@ -178,158 +173,16 @@ async function windowFullscreen(): Promise<boolean> {
   }
 }
 
-async function guardContext(state: UserState, store: StorageShape, ses: SessionState, now: number): Promise<GuardContext> {
-  return {
-    now,
-    state,
-    fullscreen: !!ses.ctx?.fullscreen || (await windowFullscreen()),
-    onCall: await onCallNow(),
-    onBreak: !!store.breakState,
-    panelOpen: (ses.panelOpenUntil ?? 0) > now,
-  };
-}
-
 async function tick(): Promise<void> {
   const now = Date.now();
   const store = await getStore();
   const ses = await getSession();
-  const settings = store.settings;
-  if (settings.trackingPaused) {
-    await setSession({ rawEvents: [], windowStart: now });
-    return;
-  }
-  const from = ses.windowStart ?? now - 30_000;
-  const { window, ctx } = computeWindow(ses.rawEvents ?? [], ses.ctx ?? { ...EMPTY_CONTEXT }, from, now, settings);
-  const features = [...store.features, window].filter((w) => w.t > now - FEATURE_KEEP_MS);
-  // raw events are deleted right after features are computed
-  const sessionPatch: Partial<SessionState> = { rawEvents: [], ctx, windowStart: now };
-
-  // learning: one baseline sample per 5-minute block
-  const patch: Partial<StorageShape> = { features };
-  if (!ses.lastBlockAt || now - ses.lastBlockAt >= BLOCK_MS) {
-    const sample = blockSample(features.filter((w) => w.t > now - BLOCK_MS));
-    sessionPatch.lastBlockAt = now;
-    if (sample) {
-      const samples = [...store.baselineSamples, sample].slice(-MAX_SAMPLES);
-      patch.baselineSamples = samples;
-      patch.baseline = computeBaseline(samples, store.baseline?.typicalSessionMin ?? 75, now);
-    }
-  }
-
-  // activity session (for "depleted"): resets after 30+ min away
-  let activityStart = ses.activityStart ?? null;
-  if (ctx.idleSince && now - ctx.idleSince >= 30 * MIN) activityStart = null;
-  else if (!ctx.idleSince && !activityStart) activityStart = now;
-  sessionPatch.activityStart = activityStart;
-
-  const taskLabel = settings.taskTab?.title || null;
-  const result = inferState({
-    windows: features,
-    baseline: store.baseline,
-    sensitivity: settings.sensitivity,
-    sessionStartedAt: activityStart,
-    idleSince: ctx.idleSince,
-    taskLabel,
-    now,
-  });
-
-  let guard = rollover(store.guard, now);
-  if (guard.day !== store.guard.day) {
-    // a new day: start fresh, nothing carried over
-    patch.guard = guard;
-  }
-  const gctx = await guardContext(result.state, store, { ...ses, ctx }, now);
-  const inferences: Inference[] = [];
-  const style = settings.wordingStyle;
-  const excludedHere = ctx.activeHost === 'excluded';
-
-  // flow / hyperfocus: never interrupt, only a tiny chip after 90 min
-  let flowSince = ses.flowSince ?? null;
-  if (result.state === 'flow') {
-    if (!flowSince) flowSince = now;
-    if (
-      settings.hydrationChip &&
-      now - flowSince >= HYDRATION_AFTER_FLOW_MIN * MIN &&
-      now - guard.lastHydrationChipAt >= HYDRATION_AFTER_FLOW_MIN * MIN &&
-      canShowChip(guard, settings, gctx) &&
-      !excludedHere
-    ) {
-      if (await showOverlay(hydrationChip(style))) {
-        guard = { ...guard, lastHydrationChipAt: now };
-        inferences.push(makeInference('flow', `Steady focus for ${Math.round((now - flowSince) / MIN)} min — showed the tiny "Water? Stretch?" chip.`, now, 'nudged'));
-      }
-    }
-  } else if (result.state !== 'neutral') flowSince = null;
-  sessionPatch.flowSince = flowSince;
-
-  // log state changes with their plain-English reason
-  const changed = result.state !== ses.lastState;
-  sessionPatch.lastState = result.state;
-
-  if (result.state === 'stuck' || result.state === 'depleted') {
-    const decision = canAutoNudge(guard, settings, gctx);
-    const learning = isLearning(settings, now);
-    if (decision.ok && !excludedHere) {
-      const spec = result.state === 'stuck' ? stuckNudge(style) : depletedNudge(style);
-      if (await showOverlay(spec)) {
-        guard = markNudged(guard, now);
-        inferences.push(makeInference(result.state, result.reason, now, 'nudged'));
-        await setSession({ panelIntent: null });
-      }
-    } else if (changed) {
-      inferences.push(makeInference(result.state, result.reason, now, learning ? 'learning' : 'silenced', learning ? undefined : decision.why));
-    }
-  } else if (changed && (result.state === 'flow' || result.state === 'away')) {
-    inferences.push(makeInference(result.state, result.reason, now, 'none'));
-  }
-
-  // mid-task re-stuck watch (10–15 min after a step starts)
-  if (ses.stepStartedAt && ses.stepIndex !== undefined && guard.restuckChipShownForStep !== ses.stepIndex && !store.breakState) {
-    const r = detectRestuck(features, ses.stepStartedAt, now, settings.sensitivity);
-    if (r && canShowChip(guard, settings, gctx) && !excludedHere) {
-      if (await showOverlay(restuckChip(style))) {
-        guard = { ...guard, restuckChipShownForStep: ses.stepIndex };
-        inferences.push(makeInference('restuck', r.reason, now, 'nudged'));
-      }
-    }
-  }
-
-  // break ran long on escape sites → one soft return prompt
-  if (store.breakState && breakRanLong(store.breakState, features, now)) {
-    const minutes = Math.round((now - store.breakState.startedAt) / MIN);
-    if (canShowChip(guard, settings, { ...gctx, onBreak: false }) && (await showOverlay(longBreakChip(style)))) {
-      patch.breakState = { ...store.breakState, returnPromptShown: true };
-      inferences.push(makeInference('long_break', `Break planned for ${store.breakState.plannedMin} min ran to ${minutes} min, mostly on other sites.`, now, 'nudged'));
-    }
-  }
-
-  // optional time-anchor chip every 30 min of an active Nudge session (off by default)
-  if (settings.timeAnchor && store.session && !store.session.endedAt && canShowChip(guard, settings, gctx)) {
-    const since = now - store.session.startedAt;
-    const lastAnchor = Math.max(guard.lastTimeAnchorAt, store.session.startedAt);
-    if (since >= 30 * MIN && now - lastAnchor >= 30 * MIN) {
-      if (await showOverlay(timeAnchorChip(Math.round(since / MIN / 5) * 5))) guard = { ...guard, lastTimeAnchorAt: now };
-    }
-  }
-
-  // learning mode: gentle 1-tap daily check-in in the evening
-  const today = dayKey(now);
-  if (
-    isLearning(settings, now) &&
-    settings.onboarded &&
-    new Date(now).getHours() >= 18 &&
-    ses.checkinChipDay !== today &&
-    !store.checkins.some((c) => c.day === today) &&
-    canShowChip(guard, settings, gctx) &&
-    result.state !== 'flow'
-  ) {
-    if (await showOverlay(checkinChip(style))) sessionPatch.checkinChipDay = today;
-  }
-
-  if (inferences.length) patch.inferences = [...store.inferences, ...inferences].slice(-300);
-  if (guard !== store.guard) patch.guard = guard;
-  await setKeys(patch);
-  await setSession(sessionPatch);
+  const plan = planTick({ now, store, ses, windowFullscreen: await windowFullscreen(), onCall: await onCallNow() });
+  // persist first: if showing the overlay fails or the worker is stopped mid-way,
+  // the cooldown is already recorded, so a restart never doubles up a nudge
+  await setKeys(plan.patch);
+  await setSession({ ...plan.sessionPatch, ...(plan.clearIntent ? { panelIntent: null } : {}) });
+  if (plan.overlay) await showOverlay(plan.overlay, store.settings);
 }
 
 async function onBreakAlarm(): Promise<void> {
@@ -348,20 +201,38 @@ async function setCalmBadge(on: boolean): Promise<void> {
     .catch(() => undefined);
 }
 
-/** Show an overlay in the active tab. Falls back to a calm badge where content scripts can't run. */
-async function showOverlay(spec: OverlaySpec): Promise<boolean> {
-  const tab = await activeTab();
-  if (tab?.id !== undefined) {
-    try {
-      const msg: ToContent = { kind: 'showOverlay', spec };
-      await chrome.tabs.sendMessage(tab.id, msg);
-      return true;
-    } catch {
-      /* chrome://, Web Store, PDF viewer, discarded tab… */
-    }
+async function sendToTab(tabId: number, msg: ToContent): Promise<boolean> {
+  try {
+    await chrome.tabs.sendMessage(tabId, msg);
+    return true;
+  } catch {
+    /* no content script yet (tab opened before install, or after an update) */
   }
+  try {
+    await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
+    await chrome.tabs.sendMessage(tabId, msg);
+    return true;
+  } catch {
+    return false; // chrome://, Web Store, PDF viewer, discarded tab…
+  }
+}
+
+/** Show an overlay in the active tab. Falls back to a calm badge where content scripts can't run. */
+async function showOverlay(spec: OverlaySpec, settings?: Settings): Promise<boolean> {
+  const s = settings ?? (await getStore()).settings;
+  const withDisplay: OverlaySpec = {
+    ...spec,
+    display: {
+      reduceMotion: s.a11y.reducedMotion === 'on',
+      highContrast: s.a11y.highContrast,
+      scale: s.a11y.textScale,
+      dyslexic: s.a11y.font === 'dyslexic',
+    },
+  };
+  const tab = await activeTab();
+  if (tab?.id !== undefined && (await sendToTab(tab.id, { kind: 'showOverlay', spec: withDisplay }))) return true;
   await setCalmBadge(true);
-  return true;
+  return false;
 }
 
 async function noteOverlay(tabId: number | undefined, overlayId: string, text: string): Promise<void> {

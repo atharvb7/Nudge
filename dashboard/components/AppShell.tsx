@@ -39,13 +39,27 @@ function StatusPill() {
   );
 }
 
+function Notice() {
+  const { notice, clearNotice, status } = useNudge();
+  if (!notice || status === 'disconnected') return null;
+  return (
+    <div role="status" className="mb-6 flex items-start justify-between gap-3 rounded-card border border-line bg-calm-soft p-4 text-ink">
+      <p>{notice}</p>
+      <button type="button" className="n-btn-ghost shrink-0 px-4 text-sm" onClick={clearNotice}>
+        Okay
+      </button>
+    </div>
+  );
+}
+
 function DisconnectedBanner() {
-  const { status, reconnect, switchToSampleData } = useNudge();
+  const { status, reconnect, switchToSampleData, notice } = useNudge();
   if (status !== 'disconnected') return null;
   return (
     <div role="region" aria-label="Connection" className="mb-6 rounded-card border border-line bg-sun-soft p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
       <p className="text-ink">
         I can&apos;t reach your Nudge extension at the moment, so you&apos;re seeing the last thing I saw. Nothing is lost.
+        {notice ? <span className="mt-1 block text-sm text-muted">{notice}</span> : null}
       </p>
       <div className="mt-3 flex flex-wrap gap-2 sm:mt-0">
         <button type="button" className="n-btn-primary" onClick={() => void reconnect()}>
@@ -128,6 +142,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main id="main" tabIndex={-1} className="mx-auto max-w-[1100px] px-4 py-8 outline-none sm:px-6 sm:py-10">
         <DisconnectedBanner />
+        <Notice />
         {ready || pathname.startsWith('/insights') ? children : <PageSkeleton />}
       </main>
 

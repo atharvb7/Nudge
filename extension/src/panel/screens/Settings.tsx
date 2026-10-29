@@ -6,6 +6,7 @@ import { getHealth } from '../../lib/api';
 import { onDeviceAvailability } from '../../lib/speech';
 import { calmVoices, speak } from '../../lib/tts';
 import { sendToBackground, type TabInfo } from '../../lib/messages';
+import { isLocalBackend, normalizeBackendUrl } from '../../lib/backendUrl';
 
 const HOUR = 3_600_000;
 
@@ -23,6 +24,7 @@ export function SettingsScreen({ store, onDemo }: { store: StorageShape; onDemo:
   const [onDevice, setOnDevice] = useState<'available' | 'downloadable' | 'unavailable'>('unavailable');
   const [tabs, setTabs] = useState<TabInfo[]>([]);
   const [backend, setBackend] = useState(s.backendUrl);
+  const [backendNote, setBackendNote] = useState<string | null>(null);
 
   useEffect(() => {
     setHealth('loading');
@@ -226,10 +228,29 @@ export function SettingsScreen({ store, onDemo }: { store: StorageShape; onDemo:
           <label htmlFor="backend">Nudge helper address</label>
           <div className="row">
             <input id="backend" className="input" style={{ flex: 1 }} value={backend} onChange={(e) => setBackend(e.target.value)} />
-            <button type="button" className="btn soft" onClick={() => set({ backendUrl: backend.trim() || 'http://localhost:8000' })}>
+            <button
+              type="button"
+              className="btn soft"
+              onClick={() => {
+                const url = backend.trim() ? normalizeBackendUrl(backend) : 'http://localhost:8000';
+                if (!url) {
+                  setBackendNote('That doesn’t look like a web address. Something like http://localhost:8000 works.');
+                  return;
+                }
+                setBackend(url);
+                setBackendNote(null);
+                set({ backendUrl: url });
+              }}
+            >
               Save
             </button>
           </div>
+          {backendNote && <p className="small muted" role="status">{backendNote}</p>}
+          {!isLocalBackend(s.backendUrl) && (
+            <p className="small calm-note" role="note">
+              ☁️ This address isn’t on your computer, so what you type or say to Nudge would travel to it. Only use a helper you trust.
+            </p>
+          )}
           <p className="small muted" role="status">
             {health === 'loading'
               ? 'Checking…'

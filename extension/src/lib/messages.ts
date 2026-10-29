@@ -49,6 +49,8 @@ export interface OverlaySpec {
   autoFadeMs?: number;
   /** follow-up text shown in place after a button press (e.g. kind "off for today") */
   closeNote?: string;
+  /** the user's own display settings, so in-page overlays honour them too */
+  display?: { reduceMotion: boolean; highContrast: boolean; scale: number; dyslexic: boolean };
 }
 
 export type ToContent =

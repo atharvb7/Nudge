@@ -63,7 +63,7 @@ function PlanRow({
   );
 }
 
-function AddItem({ onAdd }: { onAdd: (title: string, size: PlanItem['size']) => Promise<void> }) {
+function AddItem({ onAdd }: { onAdd: (title: string, size: PlanItem['size']) => Promise<boolean> }) {
   const [title, setTitle] = useState('');
   const [size, setSize] = useState<PlanItem['size']>('small');
   const [hint, setHint] = useState('');
@@ -75,7 +75,10 @@ function AddItem({ onAdd }: { onAdd: (title: string, size: PlanItem['size']) => 
       setHint('Add a few words first — anything works.');
       return;
     }
-    await onAdd(t, size);
+    if (!(await onAdd(t, size))) {
+      setHint('That didn’t save just now — your words are still here.');
+      return;
+    }
     setTitle('');
     setHint('Added. Nice.');
   };
@@ -122,7 +125,7 @@ function AddItem({ onAdd }: { onAdd: (title: string, size: PlanItem['size']) => 
 }
 
 export default function TodayPage() {
-  const { snapshot, send } = useNudge();
+  const { snapshot, act } = useNudge();
   const [keptAnyway, setKeptAnyway] = useState<Energy | null>(null);
   const [showLater, setShowLater] = useState(false);
   const [announce, setAnnounce] = useState('');
@@ -164,8 +167,7 @@ export default function TodayPage() {
   );
 
   const move = async (ids: string[], status: PlanItem['status'], msg: string) => {
-    await send({ type: 'planMove', ids, status });
-    setAnnounce(msg);
+    if (await act({ type: 'planMove', ids, status })) setAnnounce(msg);
   };
 
   return (
@@ -190,7 +192,7 @@ export default function TodayPage() {
             <EnergyDial
               value={energy}
               onChange={(e) => {
-                void send({ type: 'setEnergy', energy: e });
+                void act({ type: 'setEnergy', energy: e });
                 setKeptAnyway(null);
               }}
             />
@@ -233,7 +235,7 @@ export default function TodayPage() {
                   note={extraIds.has(item.id) ? 'if there’s room' : undefined}
                   onDone={() => void move([item.id], 'done', `"${item.title}" done. Lovely.`)}
                   onLater={() => void move([item.id], 'later', `"${item.title}" saved for later.`)}
-                  onRemove={() => void send({ type: 'planRemove', id: item.id }).then(() => setAnnounce('Removed.'))}
+                  onRemove={() => void act({ type: 'planRemove', id: item.id }).then((ok) => ok && setAnnounce('Removed.'))}
                 />
               ))}
             </ul>
@@ -245,8 +247,9 @@ export default function TodayPage() {
 
           <AddItem
             onAdd={async (title, size) => {
-              await send({ type: 'planAdd', title, size });
-              setAnnounce(`Added "${title}".`);
+              const ok = await act({ type: 'planAdd', title, size });
+              if (ok) setAnnounce(`Added "${title}".`);
+              return ok;
             }}
           />
 

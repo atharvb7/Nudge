@@ -686,3 +686,12 @@ hr.soft {
     animation: none;
   }
 }
+
+/* gentle informational note (lavender, never a warning colour) */
+.calm-note {
+  background: var(--n-calm-soft);
+  color: var(--n-text);
+  border-radius: var(--n-radius-sm);
+  padding: 8px 12px;
+  margin: 0;
+}

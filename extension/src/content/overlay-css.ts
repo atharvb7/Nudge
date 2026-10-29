@@ -35,14 +35,14 @@ export const OVERLAY_CSS = `
 .sub { margin: 4px 0 0 20px; color: var(--muted); font-size: 13px; }
 .tools { display: flex; gap: 2px; margin: -4px -6px 0 0; }
 .icon {
-  all: unset; box-sizing: border-box; width: 32px; height: 32px; border-radius: 8px;
+  all: unset; box-sizing: border-box; width: 40px; height: 40px; border-radius: 10px;
   display: grid; place-items: center; color: var(--muted); font-size: 18px; cursor: pointer;
 }
 .icon:hover { background: var(--accent-soft); }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .btn {
   all: unset; box-sizing: border-box; cursor: pointer;
-  min-height: 44px; padding: 10px 14px; border-radius: 12px;
+  min-height: 48px; padding: 10px 14px; border-radius: 12px;
   background: var(--accent-soft); color: var(--text);
   font: inherit; font-size: 14px; font-weight: 600; text-align: center;
   flex: 1 1 auto;
@@ -54,6 +54,10 @@ export const OVERLAY_CSS = `
 .card.min .actions, .card.min .sub { display: none; }
 .card.min { width: auto; max-width: 240px; }
 .card.min .text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+.card.rm, .card.rm.leaving { animation: none; transition: none; }
+.card.hc { --border: #1a1a1a; --muted: #262626; --text: #000; --bg: #fff; --accent: #1f5a3e; --accent-soft: #dff0e6; border-width: 2px; }
+.card.dys { letter-spacing: .02em; word-spacing: .08em; }
+@media (max-height: 420px) { .card { max-height: calc(100vh - 32px); overflow: auto; } }
 @keyframes in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .card { animation: none; }

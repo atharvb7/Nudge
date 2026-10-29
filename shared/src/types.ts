@@ -170,7 +170,10 @@ export interface NudgeGuard {
   dayClosed: boolean; // "Done for today" — no nudges until next session
   lastHydrationChipAt: number;
   lastTimeAnchorAt: number;
-  restuckChipShownForStep: number; // step index
+  /** identity (start time) of the step whose "still going?" chip was already shown */
+  restuckChipShownForStep: number;
+  /** learning-mode check-in chip already offered on this day */
+  checkinChipDay?: string;
 }
 
 export interface QuietHours {

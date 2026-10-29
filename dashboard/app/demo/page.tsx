@@ -54,7 +54,12 @@ export default function DemoPage() {
 
   const loadSample = async () => {
     setConfirmSeed(false);
-    await send({ type: 'loadDemoData' });
+    try {
+      await send({ type: 'loadDemoData' });
+    } catch {
+      setMsg('That didn’t go through. Your data is unchanged — want to try again?');
+      return;
+    }
     setMsg('A sample week is loaded. Have a look around — Today, What I noticed, What works, Wins.');
   };
 

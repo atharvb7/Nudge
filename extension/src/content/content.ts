@@ -6,9 +6,16 @@ import { OVERLAY_CSS } from './overlay-css';
 // It also renders Nudge's small, calm overlays in a closed shadow DOM.
 
 (() => {
-  const w = window as unknown as { __nudgeContent?: boolean };
-  if (w.__nudgeContent || window.top !== window) return;
-  w.__nudgeContent = true;
+  // May be injected twice (manifest + on-install injection). After an extension
+  // update the old copy is orphaned, so only a *living* copy blocks a new one.
+  const w = window as unknown as { __nudgeAlive?: () => boolean };
+  if (window.top !== window) return;
+  try {
+    if (w.__nudgeAlive?.()) return;
+  } catch {
+    /* orphaned copy from before an update */
+  }
+  w.__nudgeAlive = () => alive();
 
   let keys = 0;
   let scrolls = 0;
@@ -82,9 +89,16 @@ import { OVERLAY_CSS } from './overlay-css';
     host = document.createElement('nudge-overlay');
     host.style.cssText = 'all: initial; position: fixed; z-index: 2147483646; right: 16px; bottom: 16px; pointer-events: none;';
     root = host.attachShadow({ mode: 'closed' });
-    const style = document.createElement('style');
-    style.textContent = OVERLAY_CSS;
-    root.appendChild(style);
+    // Constructed stylesheets aren't blocked by strict page CSPs; <style> is the fallback.
+    try {
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync(OVERLAY_CSS);
+      root.adoptedStyleSheets = [sheet];
+    } catch {
+      const style = document.createElement('style');
+      style.textContent = OVERLAY_CSS;
+      root.appendChild(style);
+    }
     const stack = document.createElement('div');
     stack.className = 'stack';
     root.appendChild(stack);
@@ -151,7 +165,9 @@ import { OVERLAY_CSS } from './overlay-css';
       if (spec.variant === 'nudge' || all.length - i >= 2) hide(el.dataset.id!);
     });
     const card = document.createElement('section');
-    card.className = `card ${spec.variant}`;
+    const d = spec.display;
+    card.className = `card ${spec.variant}${d?.reduceMotion ? ' rm' : ''}${d?.highContrast ? ' hc' : ''}${d?.dyslexic ? ' dys' : ''}`;
+    if (d?.scale && d.scale !== 1) card.style.fontSize = `${Math.round((spec.variant === 'chip' ? 14 : 15) * d.scale)}px`;
     card.dataset.id = spec.id;
     card.setAttribute('role', 'dialog');
     card.setAttribute('aria-modal', 'false');
@@ -174,7 +190,11 @@ import { OVERLAY_CSS } from './overlay-css';
     min.setAttribute('aria-label', 'Minimise');
     min.title = 'Minimise';
     min.textContent = '–';
-    min.addEventListener('click', () => card.classList.toggle('min'));
+    min.addEventListener('click', () => {
+      const isMin = card.classList.toggle('min');
+      min.setAttribute('aria-label', isMin ? 'Expand' : 'Minimise');
+      min.setAttribute('aria-expanded', String(!isMin));
+    });
     const close = document.createElement('button');
     close.className = 'icon';
     close.type = 'button';
@@ -182,9 +202,11 @@ import { OVERLAY_CSS } from './overlay-css';
     close.title = 'Close (Esc)';
     close.textContent = '×';
     close.addEventListener('click', () => {
-      // closing a stuck nudge counts as "I'm fine"
+      // Closing a stuck nudge is read as "I'm fine": Nudge backs off (longer
+      // quiet time, and after 3 it rests until tomorrow). That's not a penalty —
+      // it's Nudge listening. Any kind follow-up note still gets shown.
       if (spec.variant === 'nudge' && spec.buttons.some((b) => b.id === 'fine')) void act('fine');
-      hide(spec.id);
+      else hide(spec.id);
     });
     tools.append(min, close);
     head.append(dot, text, tools);

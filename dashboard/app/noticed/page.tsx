@@ -118,7 +118,7 @@ function InferenceRow({ inf, onFeedback, thanks }: { inf: Inference; onFeedback:
 const PAGE = 25;
 
 export default function NoticedPage() {
-  const { snapshot, send } = useNudge();
+  const { snapshot, act } = useNudge();
   const [filter, setFilter] = useState<(typeof FILTERS)[number]['id']>('all');
   const [limit, setLimit] = useState(PAGE);
   const [thanked, setThanked] = useState<Set<string>>(new Set());
@@ -139,7 +139,7 @@ export default function NoticedPage() {
   const learning = snapshot.learningDaysLeft > 0 && !snapshot.settings.demoMode;
 
   const feedback = async (inf: Inference, f: 'right' | 'wrong') => {
-    await send({ type: 'inferenceFeedback', id: inf.id, feedback: f });
+    if (!(await act({ type: 'inferenceFeedback', id: inf.id, feedback: f }))) return;
     setThanked((prev) => {
       const next = new Set(prev);
       if (f === 'wrong') next.add(inf.id);

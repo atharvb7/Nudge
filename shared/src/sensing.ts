@@ -7,6 +7,8 @@ import { MIN, clamp, median, quantile, uid } from './util';
 
 export const WINDOW_MS = 30_000;
 export const AWAY_MS = 5 * MIN;
+/** Pseudo-host used when the whole browser loses focus (another app is in front). */
+export const ELSEWHERE_HOST = 'elsewhere';
 
 export interface SensingContext {
   activeTabId: number | null;
@@ -16,6 +18,8 @@ export interface SensingContext {
   fullscreen: boolean;
   /** when the current idle stretch began (null if active) */
   idleSince: number | null;
+  /** tab that was active when the browser lost focus — coming back to it is not a "switch" */
+  awayFromTabId?: number | null;
 }
 
 export const EMPTY_CONTEXT: SensingContext = {
@@ -69,13 +73,28 @@ export function computeWindow(
     account(clamp(e.t, from, to));
     switch (e.kind) {
       case 'activate': {
-        if (e.tabId === c.activeTabId) break;
+        if (e.host === ELSEWHERE_HOST) {
+          // browser unfocused (another app in front): not a tab switch, not on task, not escaping
+          if (c.activeHost !== ELSEWHERE_HOST) c = { ...c, awayFromTabId: c.activeTabId, activeTabId: -1, activeHost: ELSEWHERE_HOST, isTaskTab: false };
+          break;
+        }
+        if (c.activeHost === ELSEWHERE_HOST && e.tabId === c.awayFromTabId) {
+          // back from another app to the very same tab: just resume
+          c = { ...c, activeTabId: e.tabId, activeHost: e.host, isTaskTab: e.isTaskTab, awayFromTabId: null };
+          break;
+        }
+        if (e.tabId === c.activeTabId && e.host === c.activeHost) {
+          c = { ...c, isTaskTab: e.isTaskTab };
+          break;
+        }
+        // a real context change: another tab, or this tab navigated to a different site
         w.switches += 1;
         const cat = classifyHost(e.host, lists);
         if (cat === 'escape') w.escapeSwitches += 1;
         if (cat === 'work') w.workSwitches += 1;
         if (e.isTaskTab) w.taskReturns += 1;
-        c = { ...c, activeTabId: e.tabId, activeHost: e.host, isTaskTab: e.isTaskTab };
+        // page fullscreen never survives a tab change
+        c = { ...c, activeTabId: e.tabId, activeHost: e.host, isTaskTab: e.isTaskTab, awayFromTabId: null, fullscreen: e.tabId === c.activeTabId ? c.fullscreen : false };
         break;
       }
       case 'interact': {
@@ -209,7 +228,12 @@ export function inferState(input: InferInput): InferResult {
   const needEscape = Math.ceil(2 * sens.stuck);
   const switchyForYou = switchesPerMin >= b.switchesPerMinP75 * sens.stuck;
   const nearZero = interPerMin <= Math.max(3, b.taskInteractionsPerMinMedian * 0.2) / sens.stuck;
-  if (returns5 >= needReturns && escape5 >= needEscape && nearZero && switchyForYou) {
+  // Some task tabs can't report key/scroll counts (e.g. Chrome's PDF viewer), so
+  // time actually spent on the task (while not idle) also counts as activity:
+  // someone reading a PDF in long stretches is not "stuck".
+  const taskTimeShare = sum(last5, 'onTaskMs') / (last5.length * WINDOW_MS);
+  const briefVisits = taskTimeShare < 0.5 / sens.stuck;
+  if (returns5 >= needReturns && escape5 >= needEscape && nearZero && briefVisits && switchyForYou) {
     return {
       state: 'stuck',
       reason: `Switched tabs ${switches5} times in 5 min, came back to ${task} ${plural(returns5, 'time')}, with very little typing or scrolling there.`,

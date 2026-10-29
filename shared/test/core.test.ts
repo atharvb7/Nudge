@@ -312,3 +312,81 @@ describe('task labels', () => {
     expect(fillTask('Open {task}.', 'DBMS assignment', undefined, 'warm')).toBe('Open DBMS assignment.');
   });
 });
+
+describe('sensing edge cases', () => {
+  const lists = {};
+  const base = { activeTabId: 1, activeHost: 'docs.google.com', isTaskTab: true, idle: 'active' as const, fullscreen: false, idleSince: null };
+
+  it('leaving the browser and coming back to the same tab is not a switch', () => {
+    const t0 = 5_000_000;
+    const { window, ctx } = computeWindow(
+      [
+        { t: t0 + 1000, kind: 'activate', tabId: -1, host: 'elsewhere', isTaskTab: false },
+        { t: t0 + 9000, kind: 'activate', tabId: 1, host: 'docs.google.com', isTaskTab: true },
+      ],
+      base,
+      t0,
+      t0 + 30000,
+      lists,
+    );
+    expect(window.switches).toBe(0);
+    expect(window.taskReturns).toBe(0);
+    expect(window.onTaskMs).toBe(22000); // 1 s before + 21 s after; 8 s elsewhere counts as neither
+    expect(ctx.activeTabId).toBe(1);
+  });
+
+  it('a tab navigating to another site is a context change; same-site reloads are not', () => {
+    const t0 = 6_000_000;
+    const { window, ctx } = computeWindow(
+      [
+        { t: t0 + 1000, kind: 'activate', tabId: 1, host: 'docs.google.com', isTaskTab: true },
+        { t: t0 + 2000, kind: 'activate', tabId: 1, host: 'instagram.com', isTaskTab: false },
+      ],
+      base,
+      t0,
+      t0 + 30000,
+      lists,
+    );
+    expect(window.switches).toBe(1);
+    expect(window.escapeSwitches).toBe(1);
+    expect(ctx.activeHost).toBe('instagram.com');
+    expect(ctx.isTaskTab).toBe(false);
+  });
+
+  it('page fullscreen ends when the tab changes', () => {
+    const t0 = 7_000_000;
+    const { ctx } = computeWindow(
+      [
+        { t: t0 + 1000, kind: 'fullscreen', on: true },
+        { t: t0 + 2000, kind: 'activate', tabId: 2, host: 'github.com', isTaskTab: false },
+      ],
+      base,
+      t0,
+      t0 + 30000,
+      lists,
+    );
+    expect(ctx.fullscreen).toBe(false);
+  });
+
+  it('reading a PDF in long stretches is not stuck, even with zero key/scroll counts', () => {
+    const now = Date.now();
+    const ws: FeatureWindow[] = [];
+    for (let i = 10; i > 0; i--) {
+      // PDF viewer reports no interactions, but most time is spent on the task tab
+      ws.push({ t: now - (i - 1) * 30_000, switches: 2, escapeSwitches: 1, workSwitches: 0, taskReturns: i % 2 ? 1 : 0, taskInteractions: 0, escapeInteractions: 2, onTaskMs: 24000, onEscapeMs: 6000, idleMs: 0, activeHost: 'local-file', activeCategory: 'work', fullscreen: false, hour: 15 });
+    }
+    expect(inferState({ windows: ws, baseline: null, sensitivity: DEFAULT_SENSITIVITY, sessionStartedAt: now - 20 * MIN, idleSince: null, taskLabel: 'DBMS.pdf', now }).state).not.toBe('stuck');
+  });
+});
+
+describe('crisis negation and extra phrasing', () => {
+  it('respects simple negation of positive-form phrases only', () => {
+    expect(detectCrisis("I'm not suicidal, just tired")).toBe('none');
+    expect(detectCrisis("I don't want to die, I just want this essay done")).toBe('none');
+    expect(detectCrisis("I don't want to live like this")).toBe('high');
+    expect(detectCrisis('I never said I would hurt myself but I might hurt myself')).toBe('high');
+    expect(detectCrisis('i wanna die')).toBe('high');
+    expect(detectCrisis('nobody would even notice if i was gone')).toBe('concern');
+    expect(detectCrisis('what’s the point of living')).toBe('concern');
+  });
+});

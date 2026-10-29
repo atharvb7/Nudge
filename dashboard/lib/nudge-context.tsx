@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { BridgeRequest, DashboardSnapshot, HealthResponse, Settings } from '@nudge/shared';
-import { DemoSource, connect, type DataSource } from './bridge';
+import { DemoSource, ExtensionSource, connect, type DataSource } from './bridge';
 
 export type ConnectionStatus = 'loading' | 'connected' | 'demo' | 'disconnected';
 
@@ -15,6 +15,11 @@ interface NudgeContextValue {
   status: ConnectionStatus;
   snapshot: DashboardSnapshot | null;
   send: (req: BridgeRequest) => Promise<unknown>;
+  /** Fire-and-forget version of send: never throws; resolves false if it didn't go through. */
+  act: (req: BridgeRequest) => Promise<boolean>;
+  /** Short, gentle note when something couldn't be saved. */
+  notice: string;
+  clearNotice: () => void;
   updateSettings: (patch: Partial<Settings>) => Promise<void>;
   refresh: () => Promise<void>;
   reconnect: () => Promise<void>;
@@ -45,6 +50,7 @@ export function NudgeProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<ConnectionStatus>('loading');
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null);
   const [health, setHealth] = useState<HealthState>({ kind: 'checking' });
+  const [notice, setNotice] = useState('');
   const sourceRef = useRef<DataSource | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
 
@@ -106,22 +112,55 @@ export function NudgeProvider({ children }: { children: ReactNode }) {
     [load],
   );
 
-  const updateSettings = useCallback(
-    async (patch: Partial<Settings>) => {
-      // Optimistic, so toggles feel instant.
-      setSnapshot((s) => (s ? { ...s, settings: { ...s.settings, ...patch } } : s));
-      await send({ type: 'updateSettings', patch });
+  const act = useCallback(
+    async (req: BridgeRequest) => {
+      try {
+        await send(req);
+        return true;
+      } catch {
+        setNotice("That didn't save — I can't reach the extension just now. Nothing else changed.");
+        return false;
+      }
     },
     [send],
   );
 
+  const updateSettings = useCallback(
+    async (patch: Partial<Settings>) => {
+      // Optimistic, so toggles feel instant — and put back if it didn't save.
+      let before: Settings | null = null;
+      setSnapshot((s) => {
+        if (!s) return s;
+        before = s.settings;
+        return { ...s, settings: { ...s.settings, ...patch } };
+      });
+      const ok = await act({ type: 'updateSettings', patch });
+      if (!ok && before) {
+        const prev: Settings = before;
+        setSnapshot((s) => (s ? { ...s, settings: prev } : s));
+      }
+    },
+    [act],
+  );
+
   const reconnect = useCallback(async () => {
+    // Only ever reconnect to the extension here. Falling back to sample data
+    // silently would look like the user's own data vanished.
+    const prevStatus = status;
     setStatus('loading');
-    const src = await connect();
-    await attach(src);
-  }, [attach]);
+    const ext = new ExtensionSource();
+    if (await ext.detect()) {
+      setNotice('');
+      await attach(ext);
+      return;
+    }
+    ext.dispose();
+    setStatus(prevStatus === 'demo' ? 'demo' : 'disconnected');
+    setNotice('Still can’t reach the extension. If you just reloaded or updated Nudge, refreshing this page usually helps.');
+  }, [attach, status]);
 
   const switchToSampleData = useCallback(async () => {
+    setNotice('');
     await attach(new DemoSource());
   }, [attach]);
 
@@ -153,6 +192,9 @@ export function NudgeProvider({ children }: { children: ReactNode }) {
       status,
       snapshot,
       send,
+      act,
+      notice,
+      clearNotice: () => setNotice(''),
       updateSettings,
       refresh: load,
       reconnect,
@@ -160,7 +202,7 @@ export function NudgeProvider({ children }: { children: ReactNode }) {
       health,
       recheckHealth: () => setHealthTick((n) => n + 1),
     }),
-    [status, snapshot, send, updateSettings, load, reconnect, switchToSampleData, health],
+    [status, snapshot, send, act, notice, updateSettings, load, reconnect, switchToSampleData, health],
   );
 
   return <NudgeContext.Provider value={value}>{children}</NudgeContext.Provider>;

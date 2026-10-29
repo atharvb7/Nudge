@@ -1,12 +1,20 @@
 {
   "name": "nudge",
   "private": true,
-  "workspaces": ["shared", "extension", "dashboard"],
+  "workspaces": [
+    "shared",
+    "extension",
+    "dashboard"
+  ],
   "scripts": {
     "test": "npm run test -w shared && npm run test -w extension --if-present",
     "typecheck": "npm run typecheck -w shared && npm run typecheck -w extension && npm run typecheck -w dashboard",
     "build:extension": "npm run build -w extension",
     "dev:dashboard": "npm run dev -w dashboard",
-    "copy-lint": "node scripts/copy-lint.mjs"
+    "copy-lint": "node scripts/copy-lint.mjs",
+    "e2e": "node e2e/full.cjs"
+  },
+  "devDependencies": {
+    "axe-core": "^4.10.2"
   }
 }

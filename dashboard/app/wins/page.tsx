@@ -183,7 +183,7 @@ export default function WinsPage() {
                   className="n-btn-soft px-4 text-sm"
                   disabled={!open}
                   onClick={() => playWinSound(snd.id)}
-                  aria-label={`Preview ${snd.name}`}
+                  aria-label={`Play ${snd.name}`}
                 >
                   Play
                 </button>

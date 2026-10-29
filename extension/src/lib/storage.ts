@@ -50,6 +50,7 @@ export interface SessionState {
   windowStart?: number;
   lastState?: string;
   flowSince?: number | null;
+  flowSeenAt?: number | null;
   activityStart?: number | null;
   panelOpenUntil?: number; // heartbeat from the panel
   panelIntent?: PanelIntent | null;
@@ -57,7 +58,6 @@ export interface SessionState {
   stepIndex?: number;
   lastBlockAt?: number;
   lastActiveAt?: number;
-  checkinChipDay?: string;
   focusedWindowId?: number | null;
 }
 
