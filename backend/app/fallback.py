@@ -53,7 +53,7 @@ def task_label(req_task: str, tab_title: str | None, literal: bool) -> str:
         return "your task"
     if task:
         low = task.lower()
-        if _FILE_RE.search(task) or low.startswith(_DETERMINERS):
+        if task == title or "_" in task or _FILE_RE.search(task) or low.startswith(_DETERMINERS):
             return task
         if low.split()[0] in _VERBS:
             return f"“{task}”"
@@ -85,7 +85,8 @@ def _pick(options: list[str], avoid: list[str], salt: str) -> str:
 
 _OVERWHELM_RE = re.compile(
     r"overwhelm|too much|so much|too many|everything|can'?t think|drowning|panic|anxious|anxiety|stressed|"
-    r"freaking out|spiral|too big|no idea where|all at once|so many",
+    r"freaking out|spiral|too big|no idea where|all at once|so many|killing me|so hard|\\bugh+\\b|can'?t even|"
+    r"hate this|losing it|done with this",
     re.I,
 )
 
@@ -276,6 +277,25 @@ _QUICK = ("email", "text", "message", "reply", "call", "pay", "book", "print", "
 _HEAVY = ("essay", "thesis", "project", "exam", "revise", "study", "report", "assignment", "lab", "presentation")
 
 
+_LEAD_RE = re.compile(
+    r"^(?:i\s+)?(?:have\s+to|haven'?t\s+(?:even\s+)?(?:started|done|finished)(?:\s+on)?|have\s+got\s+to|"
+    r"got\s+to|gotta|need\s+to|needs\s+to|must|have|has|there'?s|there\s+is|should|ought\s+to)\b[\s,]*",
+    re.I,
+)
+_TAIL_RE = re.compile(
+    r"\s+(?:is|are)?\s*(?:due(?:\s+(?:tomorrow|today|tonight|on\s+\w+|next\s+\w+|this\s+\w+))?|"
+    r"(?:is|are)\s+piling\s+up|tomorrow|today|tonight|asap|already)$",
+    re.I,
+)
+
+
+def _is_feeling_only(item: str) -> bool:
+    """'Honestly it's too much' is a feeling to validate, not a task to pick."""
+    low = item.lower()
+    has_action = low.split()[0] in _VERBS or any(re.search(rf"\\b{re.escape(w)}", low) for b in _BUCKETS for w in b[1])
+    return looks_like_feeling(item) and not has_action
+
+
 def split_items(transcript: str) -> list[str]:
     parts = _SPLIT_RE.split(transcript or "")
     items: list[str] = []
@@ -286,7 +306,11 @@ def split_items(transcript: str) -> list[str]:
         while prev != t:
             prev = t
             t = _FILLER_RE.sub("", t).strip(" .,!?-")
-        if len(t.split()) < 1 or len(t) < 3:
+        prev = None
+        while prev != t:
+            prev = t
+            t = _TAIL_RE.sub("", _LEAD_RE.sub("", t)).strip(" .,!?-")
+        if len(t.split()) < 1 or len(t) < 3 or _is_feeling_only(t):
             continue
         key = t.lower()
         if key in seen:
@@ -307,8 +331,11 @@ def bucket_of(item: str) -> str:
 def ease(item: str) -> float:
     low = item.lower()
     score = len(item.split())
-    if any(re.search(rf"\b{w}", low) for w in _QUICK):
+    first = low.split()[0] if low.split() else ""
+    if first in _QUICK:
         score -= 4
+    elif first not in _VERBS:
+        score += 3  # "Mum keeps calling" isn't something you can start
     if any(re.search(rf"\b{w}", low) for w in _HEAVY):
         score += 4
     return score
