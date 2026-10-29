@@ -156,6 +156,7 @@ function mockBackend() {
     await task.screenshot({ path: path.join(outDir, '02-off-for-today-note.png') });
     check('the kind note stays visible after closing', (await overlayCount()) === 1);
 
+    console.log('DBG feats', ((await store('features')).features || []).length, JSON.stringify((await sesStore(['windowStart','lastState'])))); 
     // ── 2. tiny viewport ──
     await task.setViewportSize({ width: 320, height: 480 });
     await simulate('restuck');
@@ -195,6 +196,7 @@ function mockBackend() {
     await csp.screenshot({ path: path.join(outDir, '04-strict-csp.png') });
     await csp.close();
 
+    console.log('DBG feats5', ((await store('features')).features || []).length, JSON.stringify((await sesStore(['windowStart','lastState']))));
     // ── 5. pinned tab navigating to another site ──
     await task.bringToFront();
     await panel.evaluate(() => chrome.storage.session.set({ rawEvents: [] }));

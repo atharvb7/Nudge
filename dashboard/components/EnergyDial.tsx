@@ -1,11 +1,33 @@
 'use client';
 
 import { useRef, type KeyboardEvent } from 'react';
-import { ENERGY_LABELS, type Energy } from '@nudge/shared';
+import { ENERGY_LABELS, type Energy, type WordingStyle } from '@nudge/shared';
 
 const LEVELS: Energy[] = [1, 2, 3, 4, 5];
 
-export function EnergyDial({ value, onChange }: { value: Energy | null; onChange: (e: Energy) => void }) {
+// Literal wording style: plain numbers and words, no spoon metaphor.
+export const ENERGY_LABELS_LITERAL: Record<Energy, string> = {
+  1: 'Very low energy',
+  2: 'Low energy',
+  3: 'Medium energy',
+  4: 'Good energy',
+  5: 'High energy',
+};
+
+export function energyLabel(level: Energy, style: WordingStyle): string {
+  return style === 'literal' ? ENERGY_LABELS_LITERAL[level] : ENERGY_LABELS[level];
+}
+
+export function EnergyDial({
+  value,
+  onChange,
+  style = 'warm',
+}: {
+  value: Energy | null;
+  onChange: (e: Energy) => void;
+  style?: WordingStyle;
+}) {
+  const literal = style === 'literal';
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const move = (to: number) => {
@@ -35,7 +57,7 @@ export function EnergyDial({ value, onChange }: { value: Energy | null; onChange
 
   return (
     <div>
-      <div role="radiogroup" aria-label="Energy today, in spoons" className="grid grid-cols-5 gap-2">
+      <div role="radiogroup" aria-label={literal ? 'Energy today, from 1 (very low) to 5 (high)' : 'Energy today, in spoons'} className="grid grid-cols-5 gap-2">
         {LEVELS.map((level) => {
           const selected = value === level;
           return (
@@ -47,7 +69,7 @@ export function EnergyDial({ value, onChange }: { value: Energy | null; onChange
               type="button"
               role="radio"
               aria-checked={selected}
-              aria-label={`${level} ${level === 1 ? 'spoon' : 'spoons'}: ${ENERGY_LABELS[level]}`}
+              aria-label={literal ? `${level} — ${ENERGY_LABELS_LITERAL[level]}` : `${level} ${level === 1 ? 'spoon' : 'spoons'}: ${ENERGY_LABELS[level]}`}
               tabIndex={focusable === level ? 0 : -1}
               onClick={() => onChange(level)}
               onKeyDown={(e) => onKey(e, level)}
@@ -55,18 +77,34 @@ export function EnergyDial({ value, onChange }: { value: Energy | null; onChange
                 selected ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:bg-surface2'
               }`}
             >
-              <span aria-hidden="true" className="flex flex-wrap justify-center text-base leading-none sm:text-lg">
-                {Array.from({ length: level }).map((_, i) => (
-                  <span key={i}>🥄</span>
-                ))}
-              </span>
-              <span className={`text-sm font-bold ${selected ? 'text-ink' : 'text-muted'}`}>{level}</span>
+              {literal ? (
+                <span aria-hidden="true" className={`text-2xl font-bold ${selected ? 'text-ink' : 'text-muted'}`}>
+                  {level}
+                </span>
+              ) : (
+                <>
+                  <span aria-hidden="true" className="flex flex-wrap justify-center text-base leading-none sm:text-lg">
+                    {Array.from({ length: level }).map((_, i) => (
+                      <span key={i}>🥄</span>
+                    ))}
+                  </span>
+                  <span aria-hidden="true" className={`text-sm font-bold ${selected ? 'text-ink' : 'text-muted'}`}>
+                    {level}
+                  </span>
+                </>
+              )}
             </button>
           );
         })}
       </div>
       <p className="mt-3 min-h-[1.6em] text-base font-semibold text-ink" aria-live="polite">
-        {value ? ENERGY_LABELS[value] : 'Tap how much energy you have. Any answer is a good answer.'}
+        {value
+          ? literal
+            ? `${value} — ${ENERGY_LABELS_LITERAL[value]}`
+            : ENERGY_LABELS[value]
+          : literal
+            ? 'Choose a number from 1 (very low energy) to 5 (high energy).'
+            : 'Tap how much energy you have. Any answer is a good answer.'}
       </p>
     </div>
   );

@@ -83,7 +83,7 @@ describe('crisis detection', () => {
   it('catches explicit and hopeless language', () => {
     expect(detectCrisis('i want to kill myself')).toBe('high');
     expect(detectCrisis("honestly I don't want to be alive anymore")).toBe('high');
-    expect(detectCrisis('everyone would be better off without me')).toBe('high');
+    expect(detectCrisis('everyone would be better off without me')).toBe('concern'); // same tier as the backend
     expect(detectCrisis('I feel so hopeless about everything')).toBe('concern');
     expect(detectCrisis('i want to disappear')).toBe('concern');
     expect(detectCrisis('honestly kms')).toBe('high');

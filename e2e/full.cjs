@@ -11,6 +11,7 @@
  *   - task page http://127.0.0.2:4100   (a pretend assignment page)
  *   - slow      http://127.0.0.1:8001   (a /health that never answers in time)
  * Requires `npm run build -w extension` (extension/dist).
+ * Run a subset with E2E_ONLY='regex' (matched against test names).
  */
 const path = require('node:path');
 const fs = require('node:fs');
@@ -49,7 +50,9 @@ function record(name, ok, extra = '') {
   results.push({ name, ok, extra });
   console.log(`${ok ? '✓' : '✗'} ${name}${extra ? ' — ' + extra : ''}`);
 }
+const ONLY = process.env.E2E_ONLY ? new RegExp(process.env.E2E_ONLY, 'i') : null;
 async function test(name, fn) {
+  if (ONLY && !ONLY.test(name)) return;
   try {
     const r = await fn();
     if (r === false) record(name, false);
@@ -807,16 +810,22 @@ async function gotoDash(page, route = '/', base = DASH) {
       await sleep(1500);
       // any action now times out → banner
       await dash.getByRole('radio', { name: /^2 spoons/ }).click();
-      await dash.getByText(/can.t reach your Nudge extension/i).waitFor({ timeout: 10000 });
+      await dash.getByText(/can.t reach your Nudge extension/i).waitFor({ timeout: 10000 }).catch(() => {
+        throw new Error('no disconnected banner');
+      });
       await shot(dash, 'disconnected-banner', false);
       await dash.getByRole('button', { name: 'Try again' }).click();
       await sleep(2500);
       const pill = await dash.locator('[role=status]').first().innerText();
       assert(!/Sample data/.test(pill), 'silently switched to sample data: ' + pill);
-      // a page reload reconnects once the extension is back
+      // Reloading the page: reconnects if the extension came back, otherwise a clearly
+      // labelled sample-data mode (headless Chromium doesn't restart a reloaded unpacked extension).
+      const back = ctx.serviceWorkers().length > 0;
       await dash.reload();
-      await waitConnected(dash);
-      return pill;
+      if (back) await waitConnected(dash);
+      else await dash.getByText('Sample data (demo mode)').waitFor({ timeout: 8000 });
+      await shot(dash, 'after-reload-no-extension', false);
+      return `after "Try again": ${pill}; after page reload: ${back ? 'connected' : 'sample data'}`;
     });
 
     // ── demo mode without extension, storage blocked ──
