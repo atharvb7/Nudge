@@ -1,0 +1,1282 @@
+[
+  {
+    "id": "two_minute_start",
+    "name": "2-minute start",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "timer",
+    "size": "tiny",
+    "steps": [
+      "Set a 2-minute timer and touch {task} until it rings. Stopping right after is completely allowed.",
+      "If you'd like, go another 2 minutes. Or stop here and call it a win."
+    ],
+    "literal_version": [
+      "Start a 2-minute timer. Work on {task} until the timer ends. You may stop when it ends.",
+      "Optional: start another 2-minute timer and continue {task}."
+    ],
+    "phrasings": [
+      "Just two minutes with {task}, then you get to decide if you keep going.",
+      "Tiny deal: two minutes on {task}. That's all this asks."
+    ],
+    "why_it_works": "Promising only two minutes makes the starting wall much lower, and once you're moving, carrying on usually costs less than starting.",
+    "tags": ["start", "timer", "classic", "2-minute"]
+  },
+  {
+    "id": "ugly_first_draft",
+    "name": "Ugly first draft",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "writing",
+    "size": "tiny",
+    "steps": [
+      "Write the messiest possible first sentence for {task}. Bad on purpose counts.",
+      "Add one more messy sentence. Fixing is for later-you."
+    ],
+    "literal_version": [
+      "Type one sentence about {task}. Spelling and quality do not matter.",
+      "Type one more sentence. Do not edit the first one."
+    ],
+    "phrasings": [
+      "What if the first line of {task} was allowed to be terrible?",
+      "Let's make a gloriously ugly first sentence for {task}."
+    ],
+    "why_it_works": "Perfectionism often hides inside task paralysis; giving yourself permission to write badly removes the pressure that keeps the page blank.",
+    "tags": ["writing", "perfectionism", "draft"]
+  },
+  {
+    "id": "body_doubling",
+    "name": "Body doubling",
+    "for_state": ["stuck", "restuck", "overwhelmed"],
+    "min_energy": 2,
+    "modality": "social",
+    "size": "tiny",
+    "steps": [
+      "Turn on body-double mode. I'll sit right here with you while you look at {task}.",
+      "Keep me open beside you. Do the next tiny piece of {task} while I keep you company."
+    ],
+    "literal_version": [
+      "Press 'Body double'. A calm timer will run beside you. Then open {task}.",
+      "Keep the timer running. Do one small part of {task}."
+    ],
+    "phrasings": [
+      "Want some company? I can stay with you while you open {task}.",
+      "How about we do {task} side by side for a bit?"
+    ],
+    "why_it_works": "Having a calm presence nearby lowers the activation energy to start; many ADHD folks find working 'with someone' much easier than working alone.",
+    "tags": ["company", "body-double", "presence"]
+  },
+  {
+    "id": "interest_hook",
+    "name": "Interest hook",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "thinking",
+    "size": "tiny",
+    "steps": [
+      "Skim {task} and find the one bit that's even slightly interesting. Start there, not at the beginning.",
+      "Stay with that interesting bit for one more small piece."
+    ],
+    "literal_version": [
+      "Look over {task}. Choose the part that interests you most. Start with that part.",
+      "Do one more small piece of that same part."
+    ],
+    "phrasings": [
+      "Which part of {task} is the least boring? Let's sneak in through that door.",
+      "Curiosity can be a side entrance. What's one interesting corner of {task}?"
+    ],
+    "why_it_works": "Interest is a strong fuel for ADHD brains; entering through the interesting part borrows that energy for the rest.",
+    "tags": ["interest", "dopamine", "gamify"]
+  },
+  {
+    "id": "beat_the_timer",
+    "name": "Race the timer",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 3,
+    "modality": "timer",
+    "size": "small",
+    "steps": [
+      "Quick game: set 90 seconds and see how many words (or lines) of {task} you can get down before it ends.",
+      "Want a rematch? Try to beat your last count."
+    ],
+    "literal_version": [
+      "Start a 90-second timer. Write as many words for {task} as you can before it ends. Count them.",
+      "Optional: start another 90-second timer and try to write more words than last time."
+    ],
+    "phrasings": [
+      "Want to turn {task} into a tiny game?",
+      "Ninety-second sprint on {task}, just for fun?"
+    ],
+    "why_it_works": "A tiny game adds urgency and novelty, two things that help an interest-based nervous system get moving.",
+    "tags": ["gamify", "game", "novelty", "timer"]
+  },
+  {
+    "id": "implementation_intention",
+    "name": "When-then plan",
+    "for_state": ["stuck", "overwhelmed"],
+    "min_energy": 1,
+    "modality": "thinking",
+    "size": "tiny",
+    "steps": [
+      "Finish this sentence out loud: \"When I ___, I'll open {task}.\" Pick something that happens soon, like finishing your water.",
+      "When that moment comes, just open {task}. That's the whole plan."
+    ],
+    "literal_version": [
+      "Say this sentence and fill the blank: 'When I ___, I will open {task}.' Choose an action you will do in the next 10 minutes.",
+      "When you finish that action, open {task}."
+    ],
+    "phrasings": [
+      "Let's hook {task} onto something you're already going to do.",
+      "Want to pick a 'when' for {task} instead of a 'now'?"
+    ],
+    "why_it_works": "If-then plans hand the decision to a cue in your environment, so starting needs less willpower in the moment.",
+    "tags": ["plan", "cue", "implementation intention"]
+  },
+  {
+    "id": "change_location",
+    "name": "Change location",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "movement",
+    "size": "small",
+    "steps": [
+      "Take your laptop (or notes) somewhere different — another chair, the library, the kitchen table — then open {task} there.",
+      "Settle in. First move in the new spot: look at {task} for one minute."
+    ],
+    "literal_version": [
+      "Pick up your laptop. Move to a different seat or room. Then open {task}.",
+      "In the new place, look at {task} for one minute."
+    ],
+    "phrasings": [
+      "Sometimes a new spot makes a new start. Want to move somewhere for {task}?",
+      "Change of scenery for {task}?"
+    ],
+    "why_it_works": "A new place breaks the loop of cues tied to scrolling and stuck feelings, and the small novelty helps attention switch on.",
+    "tags": ["location", "environment", "novelty"]
+  },
+  {
+    "id": "reframe_question",
+    "name": "Turn it into a question",
+    "for_state": ["stuck", "overwhelmed"],
+    "min_energy": 2,
+    "modality": "thinking",
+    "size": "tiny",
+    "steps": [
+      "Turn {task} into one question you're curious about, like \"What is this really asking me?\" Write the question down.",
+      "Write the first half-answer that comes to mind. Rough is perfect."
+    ],
+    "literal_version": [
+      "Write one question about {task}. Example: 'What is this assignment asking me to do?'",
+      "Write a short answer to your question. It can be incomplete."
+    ],
+    "phrasings": [
+      "What if {task} was a question instead of a chore?",
+      "Let's get curious: what's {task} actually asking?"
+    ],
+    "why_it_works": "Questions invite curiosity instead of pressure, and curiosity is easier to start from than obligation.",
+    "tags": ["reframe", "curiosity", "question"]
+  },
+  {
+    "id": "music_cue",
+    "name": "One-song start",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "sound",
+    "size": "tiny",
+    "steps": [
+      "Put on one song you like. Work on {task} only until the song ends.",
+      "Another song? Same deal — stop whenever the music does."
+    ],
+    "literal_version": [
+      "Play one song. Work on {task} until the song ends. Then you may stop.",
+      "Optional: play one more song and continue {task}."
+    ],
+    "phrasings": [
+      "One song, one tiny bit of {task}?",
+      "Let a song be your timer for {task}."
+    ],
+    "why_it_works": "Music gives time a shape you can feel, and a familiar song can act as a start signal for your brain.",
+    "tags": ["music", "sound", "cue", "time"]
+  },
+  {
+    "id": "just_open_it",
+    "name": "Just open it",
+    "for_state": ["stuck", "restuck", "depleted", "overwhelmed"],
+    "min_energy": 1,
+    "modality": "screen",
+    "size": "tiny",
+    "steps": [
+      "Just open {task}. That's the whole step. Looking at it is optional.",
+      "Now that it's open, scroll to wherever you left off. Nothing more."
+    ],
+    "literal_version": [
+      "Open {task}. You do not need to do anything else.",
+      "Scroll to the place where you stopped last time."
+    ],
+    "phrasings": [
+      "Smallest possible step: just open {task}.",
+      "What if you only opened {task} and called that a win?"
+    ],
+    "why_it_works": "Opening the thing is often the hardest part; making it the entire goal turns an impossible wall into one click.",
+    "tags": ["open", "smallest", "classic"]
+  },
+  {
+    "id": "transition_ritual",
+    "name": "Transition ritual",
+    "for_state": ["stuck", "restuck", "overwhelmed"],
+    "min_energy": 1,
+    "modality": "body",
+    "size": "tiny",
+    "steps": [
+      "Mini ritual: close one tab you don't need, take three slow breaths, then look at {task}.",
+      "Keep the calm going. Read the first line of {task}."
+    ],
+    "literal_version": [
+      "Close one tab you are not using. Breathe in and out slowly three times. Then look at {task}.",
+      "Read the first line of {task}."
+    ],
+    "phrasings": [
+      "Let's give your brain a little doorway into {task}.",
+      "A tiny reset before {task}?"
+    ],
+    "why_it_works": "Switching tasks is extra hard with ADHD and autism; a small, repeatable ritual tells your brain 'we're changing gears now'.",
+    "tags": ["transition", "ritual", "switching"]
+  },
+  {
+    "id": "permission_to_rest",
+    "name": "Permission to rest",
+    "for_state": ["depleted", "overwhelmed"],
+    "min_energy": 1,
+    "modality": "rest",
+    "size": "tiny",
+    "is_rest": true,
+    "steps": [
+      "You're allowed to rest. {task} will be saved for later, right where you left it.",
+      "Rest however feels good. Coming back later is always an option."
+    ],
+    "literal_version": [
+      "Stop working now. {task} is saved. You can return to it later.",
+      "Do something restful for at least 10 minutes."
+    ],
+    "phrasings": [
+      "Your battery matters too. Want to rest instead?",
+      "Rest is part of the work. {task} can wait for you."
+    ],
+    "why_it_works": "Pushing on an empty tank makes the next start harder; real rest refills the energy that starting needs.",
+    "tags": ["rest", "permission", "break"]
+  },
+  {
+    "id": "sensory_reset",
+    "name": "Sensory reset",
+    "for_state": ["overwhelmed", "depleted", "stuck"],
+    "min_energy": 1,
+    "modality": "sensory",
+    "size": "tiny",
+    "steps": [
+      "Let's turn the input down: dim your screen, put on headphones or earplugs, and give yourself one quiet minute.",
+      "When it feels a bit softer, decide: look at {task}, or rest a little longer. Both are fine."
+    ],
+    "literal_version": [
+      "Lower your screen brightness. Put on headphones or earplugs. Sit quietly for 1 minute.",
+      "After 1 minute, choose: open {task}, or rest for 5 more minutes."
+    ],
+    "phrasings": [
+      "Things might be a bit loud right now. Want to turn the world down a notch?",
+      "A quiet minute first?"
+    ],
+    "why_it_works": "Sensory overload uses up the same energy that starting needs; lowering input gives your nervous system room to settle.",
+    "tags": ["sensory", "autism", "overload", "calm"]
+  },
+  {
+    "id": "first_physical_action",
+    "name": "Name the first move",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 1,
+    "modality": "thinking",
+    "size": "tiny",
+    "steps": [
+      "What's the very first physical move for {task} — a click, a scroll, picking up a pen? Do only that move.",
+      "Next physical move. Just one."
+    ],
+    "literal_version": [
+      "Decide the first physical action for {task} (for example: click the file, pick up a pen). Do only that action.",
+      "Do the next single physical action."
+    ],
+    "phrasings": [
+      "Forget the whole thing. What would your hand do first?",
+      "Let's find the first move your body makes for {task}."
+    ],
+    "why_it_works": "Big tasks feel abstract; a concrete physical action skips the planning loop and gets your body moving first.",
+    "tags": ["concrete", "physical", "smallest"]
+  },
+  {
+    "id": "write_the_title",
+    "name": "Write the title",
+    "for_state": ["stuck", "depleted"],
+    "min_energy": 1,
+    "modality": "writing",
+    "size": "tiny",
+    "steps": [
+      "Type just the title of {task} at the top of the page. Your name counts too.",
+      "Add today's date under it. Look at that — it's started."
+    ],
+    "literal_version": [
+      "Type the title of {task} at the top of the document.",
+      "Type today's date below the title."
+    ],
+    "phrasings": [
+      "Want to just put a title on {task}?",
+      "Tiniest writing step: a title for {task}."
+    ],
+    "why_it_works": "A blank page is intimidating; a title makes the document 'already started', which takes the edge off.",
+    "tags": ["writing", "blank page", "smallest"]
+  },
+  {
+    "id": "copy_the_prompt",
+    "name": "Copy the question",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 1,
+    "modality": "writing",
+    "size": "tiny",
+    "steps": [
+      "Copy the assignment question for {task} into your document, word for word. That's real progress.",
+      "Underline the one word in the question that matters most."
+    ],
+    "literal_version": [
+      "Copy the question or instructions for {task}. Paste them at the top of your document.",
+      "Underline the most important word in the question."
+    ],
+    "phrasings": [
+      "Let's borrow the first words from the question itself.",
+      "Copy-paste counts as starting {task}."
+    ],
+    "why_it_works": "Copying is low-effort and puts the task in front of you, so you're working before your brain notices.",
+    "tags": ["writing", "assignment", "smallest"]
+  },
+  {
+    "id": "messy_bullet_plan",
+    "name": "Three messy bullets",
+    "for_state": ["stuck", "overwhelmed"],
+    "min_energy": 2,
+    "modality": "writing",
+    "size": "small",
+    "steps": [
+      "Jot three messy bullet points of what {task} needs. Typos welcome.",
+      "Circle the smallest bullet. That's where we start."
+    ],
+    "literal_version": [
+      "Write three bullet points listing what {task} needs.",
+      "Choose the shortest bullet point. Start with that one."
+    ],
+    "phrasings": [
+      "Want to get {task} out of your head and onto the page?",
+      "Three bullets, zero pressure?"
+    ],
+    "why_it_works": "Working memory is limited; putting the parts on paper frees your brain to pick one instead of juggling all of them.",
+    "tags": ["plan", "working memory", "list"]
+  },
+  {
+    "id": "say_it_to_me",
+    "name": "Explain it to me",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "voice",
+    "size": "tiny",
+    "steps": [
+      "Tell me in one sentence what {task} is about, out loud or typed. I'm listening.",
+      "Now say what the first part of it would be."
+    ],
+    "literal_version": [
+      "Say one sentence that explains what {task} is about.",
+      "Say what the first part of {task} is."
+    ],
+    "phrasings": [
+      "Want to explain {task} to me like I'm a friend?",
+      "Talking it out can unlock it. What's {task} about?"
+    ],
+    "why_it_works": "Explaining out loud organizes your thoughts and often reveals the first step on its own.",
+    "tags": ["voice", "explain", "rubber duck"]
+  },
+  {
+    "id": "solo_window",
+    "name": "One window, one thing",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "screen",
+    "size": "tiny",
+    "steps": [
+      "Drag {task} into its own window so it's the only thing in front of you. Your other tabs are safe, just out of view.",
+      "Maximize that window and look at it for one minute."
+    ],
+    "literal_version": [
+      "Drag the tab with {task} out into a new window. Your other tabs stay open in the old window.",
+      "Make the new window full size. Look at {task} for 1 minute."
+    ],
+    "phrasings": [
+      "Want to give {task} a quiet room of its own?",
+      "Let's clear the stage so {task} is the only thing on it."
+    ],
+    "why_it_works": "Fewer visible options means fewer pulls on attention, without the stress of closing anything.",
+    "tags": ["distraction", "screen", "environment"]
+  },
+  {
+    "id": "focus_round_10",
+    "name": "Gentle 10-minute round",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 3,
+    "modality": "timer",
+    "size": "small",
+    "steps": [
+      "Try a 10-minute round on {task} with body-double mode. You can press stop any time, no explanation needed.",
+      "Round done? Take a 2-minute stretch before deciding on another."
+    ],
+    "literal_version": [
+      "Start a 10-minute body-double timer and work on {task}. You may stop at any time.",
+      "When the timer ends, stand up and stretch for 2 minutes."
+    ],
+    "phrasings": [
+      "Feeling a little steadier? A short round on {task} might fit.",
+      "Ten calm minutes with {task}, exit door always open?"
+    ],
+    "why_it_works": "Short, bounded work rounds with a built-in exit feel safe to start, and the visible timer helps with time blindness.",
+    "tags": ["timer", "pomodoro", "focus"]
+  },
+  {
+    "id": "pair_with_treat",
+    "name": "Pair it with a treat",
+    "for_state": ["stuck", "depleted"],
+    "min_energy": 2,
+    "modality": "body",
+    "size": "tiny",
+    "steps": [
+      "Grab a drink or snack you enjoy, then open {task} while you have it.",
+      "Enjoy it while you do one small piece of {task}."
+    ],
+    "literal_version": [
+      "Get a drink or snack you like. Then open {task}.",
+      "Do one small part of {task} while you eat or drink."
+    ],
+    "phrasings": [
+      "What if {task} came with a snack?",
+      "Let's make {task} a bit more pleasant first."
+    ],
+    "why_it_works": "Pairing a pleasant thing with a hard thing (temptation bundling) lends the hard thing a bit of reward.",
+    "tags": ["reward", "dopamine", "treat"]
+  },
+  {
+    "id": "stand_and_stretch",
+    "name": "Stand, stretch, sit",
+    "for_state": ["stuck", "depleted", "restuck"],
+    "min_energy": 1,
+    "modality": "movement",
+    "size": "tiny",
+    "steps": [
+      "Stand up, reach your arms up high once, then sit back down and open {task}.",
+      "Shake out your hands, then do the first small part."
+    ],
+    "literal_version": [
+      "Stand up. Raise both arms above your head. Sit down. Open {task}.",
+      "Shake your hands for 5 seconds. Do the first small part of {task}."
+    ],
+    "phrasings": [
+      "Want to wake your body up a little before {task}?",
+      "A quick stretch might shake loose a start."
+    ],
+    "why_it_works": "A small burst of movement nudges alertness and gives your brain a clean 'reset' before starting.",
+    "tags": ["movement", "body", "alertness"]
+  },
+  {
+    "id": "brain_dump",
+    "name": "Brain dump",
+    "for_state": ["overwhelmed", "stuck"],
+    "min_energy": 1,
+    "modality": "voice",
+    "size": "small",
+    "steps": [
+      "Let's empty your head first. Press Brain dump and ramble about everything on your mind. I'll pick one thing to start with.",
+      "Here's the one thing I'd start with. Want to swap it for another?"
+    ],
+    "literal_version": [
+      "Press 'Brain dump'. Say or type every task you are thinking about. Nudge will group them and choose one.",
+      "Look at the chosen task. Keep it or choose a different one."
+    ],
+    "phrasings": [
+      "Too many things at once? Let's pour them all out.",
+      "Your head sounds full. Want to unload it here?"
+    ],
+    "why_it_works": "When everything feels urgent, nothing gets started; getting it all out lets you choose one thing with less noise.",
+    "tags": ["overwhelm", "brain dump", "prioritize", "voice"]
+  },
+  {
+    "id": "easiest_part_first",
+    "name": "Easiest part first",
+    "for_state": ["stuck", "restuck", "depleted"],
+    "min_energy": 1,
+    "modality": "thinking",
+    "size": "tiny",
+    "steps": [
+      "Find the easiest part of {task}, even if it's not the first part. Start there.",
+      "Another easy bit? Keep picking the low-hanging fruit."
+    ],
+    "literal_version": [
+      "Look at {task}. Choose the easiest part. Do that part first.",
+      "Choose the next easiest part and do it."
+    ],
+    "phrasings": [
+      "Who says you have to start at the start?",
+      "Let's grab the easiest piece of {task}."
+    ],
+    "why_it_works": "An early easy win builds momentum and proves to your brain that this task is doable.",
+    "tags": ["momentum", "easy", "win"]
+  },
+  {
+    "id": "look_back_wins",
+    "name": "Look at what you've done",
+    "for_state": ["restuck", "depleted"],
+    "min_energy": 1,
+    "modality": "thinking",
+    "size": "tiny",
+    "steps": [
+      "Take a peek at what you've already done today. Every start counts, including the ones that paused.",
+      "With that in mind, pick one tiny next thing, or rest. Your call."
+    ],
+    "literal_version": [
+      "Open your wins list. Read what you did today.",
+      "Choose one small next action for {task}, or choose to rest."
+    ],
+    "phrasings": [
+      "You've done more than it feels like. Want to see?",
+      "Quick look back before looking forward?"
+    ],
+    "why_it_works": "Seeing evidence of effort counters the 'I've done nothing' feeling that often makes restarting harder.",
+    "tags": ["wins", "self-compassion", "momentum"]
+  },
+  {
+    "id": "note_to_future_self",
+    "name": "Note to future-you",
+    "for_state": ["depleted", "restuck"],
+    "min_energy": 1,
+    "modality": "writing",
+    "size": "tiny",
+    "steps": [
+      "Write one line to future-you about where {task} is at and what the next tiny bit could be.",
+      "That's a gift to later-you. Rest or continue — both are fine."
+    ],
+    "literal_version": [
+      "Write one sentence describing where {task} is now and what the next step is.",
+      "Choose: rest now, or continue {task}."
+    ],
+    "phrasings": [
+      "Want to leave a breadcrumb for future-you?",
+      "Let's make tomorrow's start easier."
+    ],
+    "why_it_works": "Restarting is easiest when you know exactly where to pick up; a one-line note saves future-you the 'where was I?' search.",
+    "tags": ["future self", "handoff", "rest"]
+  },
+  {
+    "id": "phone_away",
+    "name": "Phone in another room",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "environment",
+    "size": "tiny",
+    "steps": [
+      "Put your phone face-down across the room for just this one step. It'll be right there afterwards.",
+      "Now look at {task} for one minute."
+    ],
+    "literal_version": [
+      "Place your phone face-down at least 2 metres away from you.",
+      "Look at {task} for 1 minute."
+    ],
+    "phrasings": [
+      "Want to give your phone a short nap?",
+      "A little distance from the phone, just for now?"
+    ],
+    "why_it_works": "Even a silent phone nearby pulls on attention; a little distance removes one competing choice.",
+    "tags": ["phone", "distraction", "environment"]
+  },
+  {
+    "id": "read_one_paragraph",
+    "name": "Read one paragraph",
+    "for_state": ["stuck", "restuck", "depleted"],
+    "min_energy": 1,
+    "modality": "reading",
+    "size": "tiny",
+    "steps": [
+      "Read just the first paragraph of {task}. Nothing else is needed.",
+      "Read the next paragraph, or stop and let it sink in."
+    ],
+    "literal_version": [
+      "Read the first paragraph of {task}. Then stop.",
+      "Read the second paragraph of {task}, or stop."
+    ],
+    "phrasings": [
+      "One paragraph, and that's it?",
+      "Let's just read a little of {task}."
+    ],
+    "why_it_works": "A clearly defined, tiny reading goal has a visible finish line, which makes it easier to begin.",
+    "tags": ["reading", "smallest", "study"]
+  },
+  {
+    "id": "highlight_one",
+    "name": "Highlight one line",
+    "for_state": ["stuck", "depleted"],
+    "min_energy": 1,
+    "modality": "reading",
+    "size": "tiny",
+    "steps": [
+      "Find and highlight one sentence in {task} that looks important.",
+      "Highlight one more, or write a one-word note beside it."
+    ],
+    "literal_version": [
+      "Highlight one sentence in {task} that seems important.",
+      "Highlight one more sentence, or write a one-word note next to it."
+    ],
+    "phrasings": [
+      "Treasure hunt: one important line in {task}?",
+      "Want to just mark one sentence?"
+    ],
+    "why_it_works": "Highlighting is active but low-stakes, so it switches your brain into 'working' mode gently.",
+    "tags": ["reading", "study", "active"]
+  },
+  {
+    "id": "empty_headings",
+    "name": "Empty headings",
+    "for_state": ["stuck", "overwhelmed"],
+    "min_energy": 2,
+    "modality": "writing",
+    "size": "tiny",
+    "steps": [
+      "Make empty headings for {task}, like Intro, Middle, End. No content yet.",
+      "Pick the heading that feels easiest and add one line under it."
+    ],
+    "literal_version": [
+      "Type three headings in your document: 'Introduction', 'Main part', 'Conclusion'. Do not write anything under them.",
+      "Choose one heading. Write one sentence under it."
+    ],
+    "phrasings": [
+      "Want to build the skeleton of {task} first?",
+      "Headings only, no pressure to fill them."
+    ],
+    "why_it_works": "A scaffold turns one big task into small labelled boxes, which are far easier to start than a blank page.",
+    "tags": ["structure", "writing", "scaffold"]
+  },
+  {
+    "id": "two_questions",
+    "name": "Two questions",
+    "for_state": ["stuck", "overwhelmed"],
+    "min_energy": 2,
+    "modality": "writing",
+    "size": "tiny",
+    "steps": [
+      "Write down two questions you have about {task}. Questions count as real work.",
+      "Choose one question and look for its answer for two minutes."
+    ],
+    "literal_version": [
+      "Write two questions about {task}.",
+      "Choose one question. Spend 2 minutes looking for the answer."
+    ],
+    "phrasings": [
+      "What don't you know yet about {task}? That's a great start.",
+      "Confusion is useful. Want to write it down?"
+    ],
+    "why_it_works": "Unclear tasks are hard to start; naming what's unclear turns fog into something you can act on.",
+    "tags": ["clarity", "questions", "study"]
+  },
+  {
+    "id": "worked_example",
+    "name": "Peek at an example",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "reading",
+    "size": "small",
+    "steps": [
+      "Find one example or solved problem similar to {task} and look at it for a minute.",
+      "Copy its shape: what's the first thing it does? Do that for yours."
+    ],
+    "literal_version": [
+      "Find one solved example similar to {task}. Read it for 1 minute.",
+      "Look at the first step in the example. Do the same first step for {task}."
+    ],
+    "phrasings": [
+      "Want to see how someone else started something like {task}?",
+      "Examples can be a map. Peek at one?"
+    ],
+    "why_it_works": "Examples reduce the uncertainty about 'how do I even begin', which is often what freezes a start.",
+    "tags": ["example", "clarity", "study"]
+  },
+  {
+    "id": "ask_someone",
+    "name": "Draft a question to someone",
+    "for_state": ["stuck", "overwhelmed"],
+    "min_energy": 2,
+    "modality": "social",
+    "size": "small",
+    "steps": [
+      "Draft a one-line message to a friend, classmate, or TA with one question about {task}. Sending it is optional.",
+      "If it feels okay, send it. If not, the draft still helped you think."
+    ],
+    "literal_version": [
+      "Write a one-sentence message asking one question about {task}. Do not send it yet.",
+      "Choose: send the message, or keep it as a note."
+    ],
+    "phrasings": [
+      "Want to borrow a brain for {task}?",
+      "Sometimes one question to someone unlocks the whole thing."
+    ],
+    "why_it_works": "Reaching out breaks isolation, and writing a question clarifies what you actually need.",
+    "tags": ["social", "help", "clarity"]
+  },
+  {
+    "id": "water_first",
+    "name": "Water first",
+    "for_state": ["depleted", "stuck"],
+    "min_energy": 1,
+    "modality": "body",
+    "size": "tiny",
+    "steps": [
+      "Get a glass of water. Then see how you feel about {task} — no decision needed yet.",
+      "Feeling a touch better? Open {task}, or rest more. Both are good choices."
+    ],
+    "literal_version": [
+      "Go and drink a glass of water.",
+      "Choose: open {task}, or rest for 10 more minutes."
+    ],
+    "phrasings": [
+      "When did you last have some water?",
+      "A water break first might help."
+    ],
+    "why_it_works": "Even mild dehydration can make focus and mood harder; it's one of the easiest things to fix.",
+    "tags": ["body", "water", "care"]
+  },
+  {
+    "id": "body_check",
+    "name": "Body check-in",
+    "for_state": ["depleted", "overwhelmed"],
+    "min_energy": 1,
+    "modality": "body",
+    "size": "tiny",
+    "steps": [
+      "Quick body check: hungry, thirsty, tired, too warm, too cold? Pick one and look after it first.",
+      "Now, how does {task} feel? Start tiny or rest — you choose."
+    ],
+    "literal_version": [
+      "Ask yourself: Am I hungry, thirsty, tired, hot, or cold? Fix one of these.",
+      "Choose: start a small part of {task}, or rest."
+    ],
+    "phrasings": [
+      "Sometimes 'stuck' is actually 'hungry'. Quick check?",
+      "How's your body doing right now?"
+    ],
+    "why_it_works": "Unmet body needs quietly drain executive function; meeting one often frees up more energy than pushing harder.",
+    "tags": ["body", "interoception", "care"]
+  },
+  {
+    "id": "stopping_point",
+    "name": "Pick your stopping point",
+    "for_state": ["stuck", "restuck", "depleted"],
+    "min_energy": 2,
+    "modality": "thinking",
+    "size": "tiny",
+    "steps": [
+      "Before starting, pick your exit: \"I'll stop after one paragraph\" (or one problem). Then begin {task}.",
+      "Reached your stopping point? That's a full win. Stop or continue, your choice."
+    ],
+    "literal_version": [
+      "Decide where you will stop, for example: after one paragraph or one question. Then start {task}.",
+      "When you reach that point, you may stop."
+    ],
+    "phrasings": [
+      "Knowing where it ends can make starting easier.",
+      "Let's give {task} a finish line you choose."
+    ],
+    "why_it_works": "Tasks with no clear end feel endless; a chosen stopping point makes starting feel safe.",
+    "tags": ["boundary", "exit", "safety"]
+  },
+  {
+    "id": "paper_switch",
+    "name": "Switch to paper",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "writing",
+    "size": "tiny",
+    "steps": [
+      "Switch tools: grab paper or a whiteboard and sketch the first idea for {task} by hand.",
+      "Bring one line from the paper back into your document."
+    ],
+    "literal_version": [
+      "Take a pen and paper. Write or draw your first idea for {task}.",
+      "Type one line from the paper into your document."
+    ],
+    "phrasings": [
+      "Want to step away from the screen for a moment?",
+      "Paper sometimes feels less scary than a screen."
+    ],
+    "why_it_works": "A different medium is a small novelty, and paper has no tabs pulling you away.",
+    "tags": ["novelty", "paper", "screen break"]
+  },
+  {
+    "id": "voice_draft",
+    "name": "Say the first draft",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "voice",
+    "size": "tiny",
+    "steps": [
+      "Say your first idea for {task} out loud, like you're telling a friend. Then type the gist of what you said.",
+      "Say the next idea out loud, then jot it down."
+    ],
+    "literal_version": [
+      "Say your first idea about {task} out loud. Then type a short version of it.",
+      "Say your second idea out loud. Then type it."
+    ],
+    "phrasings": [
+      "Talking is often easier than writing. Want to say it first?",
+      "What would you say about {task} if nobody was grading it?"
+    ],
+    "why_it_works": "Speaking skips the blank-page freeze; ideas that come out by voice are easier to tidy than to invent.",
+    "tags": ["voice", "writing", "draft"]
+  },
+  {
+    "id": "countdown_launch",
+    "name": "5-4-3-2-1 launch",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "body",
+    "size": "tiny",
+    "steps": [
+      "Count down 5-4-3-2-1 and click into {task} on 1. No thinking in between.",
+      "You launched. Do one small thing while you're there."
+    ],
+    "literal_version": [
+      "Count down from 5 to 1. When you say 1, click on {task}.",
+      "Do one small action in {task}."
+    ],
+    "phrasings": [
+      "Want to launch into {task} like a little rocket?",
+      "Countdown start?"
+    ],
+    "why_it_works": "A countdown interrupts overthinking and gives a clear 'go' moment.",
+    "tags": ["launch", "countdown", "momentum"]
+  },
+  {
+    "id": "tiny_side_win",
+    "name": "Tiny side win",
+    "for_state": ["stuck", "depleted"],
+    "min_energy": 2,
+    "modality": "movement",
+    "size": "tiny",
+    "steps": [
+      "Do one tiny unrelated win: clear one corner of your desk or throw away one thing. Then come back to {task}.",
+      "Momentum's warm. Open {task}."
+    ],
+    "literal_version": [
+      "Clean one small area of your desk. Keep it under 2 minutes.",
+      "Open {task}."
+    ],
+    "phrasings": [
+      "A quick easy win might warm up your engine.",
+      "Want to start with something tiny and easy?"
+    ],
+    "why_it_works": "A small finished action gives a little reward and momentum you can carry into the bigger task.",
+    "tags": ["momentum", "win", "warm-up"]
+  },
+  {
+    "id": "sound_bubble",
+    "name": "Sound bubble",
+    "for_state": ["stuck", "restuck", "overwhelmed"],
+    "min_energy": 1,
+    "modality": "sound",
+    "size": "tiny",
+    "steps": [
+      "Turn on brown noise or rain in body-double mode, then look at {task} inside your little sound bubble.",
+      "Stay in the bubble and do one small piece."
+    ],
+    "literal_version": [
+      "Start body-double mode. Turn on the 'brown noise' or 'rain' sound. Open {task}.",
+      "Do one small part of {task} while the sound plays."
+    ],
+    "phrasings": [
+      "Some steady background sound might help.",
+      "Want a cosy sound bubble for {task}?"
+    ],
+    "why_it_works": "Steady background noise can mask distracting sounds and give an under-stimulated brain just enough input.",
+    "tags": ["sound", "noise", "sensory"]
+  },
+  {
+    "id": "start_routine",
+    "name": "Same start routine",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "ritual",
+    "size": "tiny",
+    "steps": [
+      "Do your usual start ritual — same drink, same playlist, same seat. Then open {task}.",
+      "Ritual done. One small step on {task}."
+    ],
+    "literal_version": [
+      "Do the same three things you usually do before work (for example: get a drink, start a playlist, sit at your desk). Then open {task}.",
+      "Do one small part of {task}."
+    ],
+    "phrasings": [
+      "Your usual start ritual might carry you in.",
+      "Familiar steps can make {task} feel familiar too."
+    ],
+    "why_it_works": "Predictable routines reduce the number of decisions needed to begin, which helps both ADHD and autistic brains.",
+    "tags": ["routine", "predictable", "autism"]
+  },
+  {
+    "id": "deep_pressure",
+    "name": "Grounding pressure",
+    "for_state": ["overwhelmed", "depleted"],
+    "min_energy": 1,
+    "modality": "sensory",
+    "size": "tiny",
+    "steps": [
+      "Try something grounding: wrap up in a hoodie or blanket, or press your palms together firmly for a slow count of ten.",
+      "When you feel a bit more settled, choose: rest, or one tiny look at {task}."
+    ],
+    "literal_version": [
+      "Press your palms together firmly and count slowly to 10. Or wrap yourself in a blanket.",
+      "Choose: rest, or look at {task} for 1 minute."
+    ],
+    "phrasings": [
+      "Want to feel a little more grounded first?",
+      "Let's settle your body before anything else."
+    ],
+    "why_it_works": "Deep pressure is calming for many autistic and ADHD nervous systems and can ease overwhelm quickly.",
+    "tags": ["sensory", "grounding", "autism", "calm"]
+  },
+  {
+    "id": "exact_order",
+    "name": "Write the exact order",
+    "for_state": ["overwhelmed", "stuck"],
+    "min_energy": 2,
+    "modality": "writing",
+    "size": "small",
+    "steps": [
+      "Write the exact order of the next three actions for {task}, so nothing is a surprise.",
+      "Do action number one."
+    ],
+    "literal_version": [
+      "Write a numbered list of the next 3 actions for {task}. Be specific.",
+      "Do action 1 on your list."
+    ],
+    "phrasings": [
+      "Would a clear, predictable order help with {task}?",
+      "Let's take the guesswork out of {task}."
+    ],
+    "why_it_works": "Uncertainty is exhausting; a concrete order removes surprises and the decisions that come with them.",
+    "tags": ["predictable", "plan", "autism", "literal"]
+  },
+  {
+    "id": "one_percent",
+    "name": "Aim for 1%",
+    "for_state": ["stuck", "depleted", "overwhelmed"],
+    "min_energy": 1,
+    "modality": "thinking",
+    "size": "tiny",
+    "steps": [
+      "Change the goal from \"finish {task}\" to \"make it 1% more done\". What's 1%?",
+      "Do that 1%. It genuinely counts."
+    ],
+    "literal_version": [
+      "Choose one very small piece of {task} — about 1% of it.",
+      "Do that piece."
+    ],
+    "phrasings": [
+      "What would 1% of {task} look like?",
+      "Let's shrink the goal until it's easy."
+    ],
+    "why_it_works": "A smaller goal shrinks the fear that blocks starting; momentum does the rest more often than you'd expect.",
+    "tags": ["shrink", "smallest", "goal"]
+  },
+  {
+    "id": "rubric_checkbox",
+    "name": "First checkbox",
+    "for_state": ["stuck", "overwhelmed"],
+    "min_energy": 2,
+    "modality": "reading",
+    "size": "tiny",
+    "steps": [
+      "Open the instructions or rubric for {task} and turn the first point into a checkbox.",
+      "Look at that one checkbox. What's the tiniest move toward it?"
+    ],
+    "literal_version": [
+      "Open the instructions for {task}. Write the first requirement as a checkbox item.",
+      "Do one small action for that checkbox."
+    ],
+    "phrasings": [
+      "Want to turn the instructions into a checklist?",
+      "Let's find the first box to tick."
+    ],
+    "why_it_works": "Checklists externalize what's needed and give a satisfying sense of progress with each tick.",
+    "tags": ["checklist", "clarity", "assignment"]
+  },
+  {
+    "id": "walk_reset",
+    "name": "Short walk",
+    "for_state": ["depleted", "overwhelmed", "restuck"],
+    "min_energy": 1,
+    "modality": "movement",
+    "size": "small",
+    "is_rest": true,
+    "steps": [
+      "Take a short walk — even to the end of the corridor and back. Fresh air is a bonus.",
+      "Back? Notice how you feel, then choose rest or a tiny step."
+    ],
+    "literal_version": [
+      "Walk for 5 minutes. You can walk to the end of the hallway and back.",
+      "When you return, choose: rest, or do one small part of {task}."
+    ],
+    "phrasings": [
+      "Your brain might like a little walk.",
+      "A few minutes of moving could reset things."
+    ],
+    "why_it_works": "Light movement can lift mood and alertness and gives your mind a break from the stuck loop.",
+    "tags": ["movement", "walk", "reset", "rest"]
+  },
+  {
+    "id": "kind_words",
+    "name": "Kind words first",
+    "for_state": ["overwhelmed", "depleted", "restuck"],
+    "min_energy": 1,
+    "modality": "thinking",
+    "size": "tiny",
+    "steps": [
+      "Put a hand on your chest and say: \"This is hard, and I'm still allowed to try.\"",
+      "When you're ready, the smallest next thing is just to look at {task}."
+    ],
+    "literal_version": [
+      "Place one hand on your chest. Say: 'This is hard. I am allowed to try.'",
+      "Look at {task} when you feel ready."
+    ],
+    "phrasings": [
+      "This seems hard right now. That makes sense.",
+      "Before anything else: you're doing okay."
+    ],
+    "why_it_works": "Self-criticism makes avoidance stronger; self-compassion lowers the threat so starting feels possible again.",
+    "tags": ["self-compassion", "shame", "kindness"]
+  },
+  {
+    "id": "novelty_swap",
+    "name": "Make it new",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "screen",
+    "size": "tiny",
+    "steps": [
+      "Change one thing about how {task} looks: a new font, a different colour pen, dark mode, or standing up.",
+      "With the fresh look, do one small piece."
+    ],
+    "literal_version": [
+      "Change one setting: the font, the colour, or switch to dark mode. Or stand while you work.",
+      "Do one small part of {task}."
+    ],
+    "phrasings": [
+      "Want to give {task} a makeover?",
+      "A little novelty might wake things up."
+    ],
+    "why_it_works": "ADHD attention responds to novelty; a fresh look can make a stale task feel new enough to begin.",
+    "tags": ["novelty", "gamify", "interest"]
+  },
+  {
+    "id": "start_from_end",
+    "name": "Start from the end",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 3,
+    "modality": "writing",
+    "size": "small",
+    "steps": [
+      "Start from the end: jot down what the finished {task} would say or show, in one line.",
+      "Now work backwards one step from there."
+    ],
+    "literal_version": [
+      "Write one sentence describing what the finished {task} will contain.",
+      "Write the step that comes just before the finished version."
+    ],
+    "phrasings": [
+      "What if we started from the finish line?",
+      "Let's peek at what done looks like."
+    ],
+    "why_it_works": "Picturing the end clarifies the goal and makes the path backwards easier to see.",
+    "tags": ["goal", "backwards", "clarity"]
+  },
+  {
+    "id": "restart_from_last",
+    "name": "Pick up the thread",
+    "for_state": ["restuck"],
+    "min_energy": 1,
+    "modality": "screen",
+    "size": "tiny",
+    "steps": [
+      "Let's pick up right where you were. Reread just the last line you wrote or read in {task}.",
+      "Add one tiny thing after it."
+    ],
+    "literal_version": [
+      "Go to the last place you worked on in {task}. Read the last sentence.",
+      "Add one sentence or one small action after it."
+    ],
+    "phrasings": [
+      "No need to start over. Let's find your place.",
+      "Your progress is still there. Want to peek?"
+    ],
+    "why_it_works": "Rereading the last bit reloads your context so continuing feels like a small step, not a fresh start.",
+    "tags": ["resume", "context", "restart"]
+  },
+  {
+    "id": "timer_visible",
+    "name": "Make time visible",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "timer",
+    "size": "tiny",
+    "steps": [
+      "Start a visual timer so you can see time moving, then glance at {task} while it runs.",
+      "Watch the ring shrink while you do one small thing."
+    ],
+    "literal_version": [
+      "Start the visual timer. Look at {task} while it runs.",
+      "Do one small action in {task} before the timer ends."
+    ],
+    "phrasings": [
+      "Time can feel slippery. Want to see it?",
+      "A visible timer might make {task} feel more contained."
+    ],
+    "why_it_works": "Time blindness makes tasks feel endless; seeing time pass makes the effort feel bounded and real.",
+    "tags": ["time blindness", "timer", "visual"]
+  },
+  {
+    "id": "choose_one_of_two",
+    "name": "Choose between two",
+    "for_state": ["overwhelmed", "stuck"],
+    "min_energy": 1,
+    "modality": "thinking",
+    "size": "tiny",
+    "steps": [
+      "Here are two tiny options: open {task}, or write one word about it. Pick either — both count.",
+      "You chose. Do just that one."
+    ],
+    "literal_version": [
+      "Choose one: (A) open {task}, or (B) write one word about {task}.",
+      "Do the option you chose."
+    ],
+    "phrasings": [
+      "Too many choices? Here are just two.",
+      "Let's make this an easy pick."
+    ],
+    "why_it_works": "Fewer options reduce decision fatigue, and choosing gives a sense of control.",
+    "tags": ["choice", "decision", "overwhelm"]
+  },
+  {
+    "id": "gentle_stop",
+    "name": "Call it a day kindly",
+    "for_state": ["depleted"],
+    "min_energy": 1,
+    "modality": "rest",
+    "size": "tiny",
+    "is_rest": true,
+    "steps": [
+      "It might be time to call it a day. I'll save {task} for later with a note so starting again is easy.",
+      "Rest well. Nothing is lost."
+    ],
+    "literal_version": [
+      "Stop for today. Nudge will save {task} and a note for next time.",
+      "Close your laptop when you are ready."
+    ],
+    "phrasings": [
+      "You've given what you had today. That's enough.",
+      "Want to close up for today? It's a perfectly good choice."
+    ],
+    "why_it_works": "Ending on purpose (instead of drifting) protects tomorrow's energy and makes the next start easier.",
+    "tags": ["rest", "offramp", "end of day"]
+  },
+  {
+    "id": "quiet_minute",
+    "name": "One quiet minute",
+    "for_state": ["overwhelmed", "depleted"],
+    "min_energy": 1,
+    "modality": "rest",
+    "size": "tiny",
+    "is_rest": true,
+    "steps": [
+      "Close your eyes or soften your gaze for one minute. Nothing to do, nothing to fix.",
+      "How do you feel? Rest a bit more or try something tiny — both are fine."
+    ],
+    "literal_version": [
+      "Close your eyes for 1 minute. Breathe normally.",
+      "Choose: rest more, or do one small part of {task}."
+    ],
+    "phrasings": [
+      "Want one minute where nothing is asked of you?",
+      "A tiny pause might help everything feel smaller."
+    ],
+    "why_it_works": "A short pause lets a stressed nervous system downshift so the task feels less threatening.",
+    "tags": ["rest", "calm", "pause"]
+  },
+  {
+    "id": "count_items",
+    "name": "Count the parts",
+    "for_state": ["overwhelmed", "stuck"],
+    "min_energy": 2,
+    "modality": "reading",
+    "size": "tiny",
+    "steps": [
+      "Just count how many parts or questions {task} has. Counting is the whole step.",
+      "Pick the shortest part from your count."
+    ],
+    "literal_version": [
+      "Count the number of questions or sections in {task}. Write the number down.",
+      "Choose the shortest question or section."
+    ],
+    "phrasings": [
+      "How big is {task} really? Let's count.",
+      "Sometimes knowing the size makes it smaller."
+    ],
+    "why_it_works": "Unknown size feels infinite; counting gives the task a real, finite shape.",
+    "tags": ["clarity", "size", "overwhelm"]
+  },
+  {
+    "id": "set_up_space",
+    "name": "Set up the space",
+    "for_state": ["stuck", "depleted"],
+    "min_energy": 1,
+    "modality": "environment",
+    "size": "tiny",
+    "steps": [
+      "Set up your space for {task}: open the right file, put your notes beside you. Don't start yet.",
+      "Everything's ready. Want to do one tiny thing now that it's set up?"
+    ],
+    "literal_version": [
+      "Open the files you need for {task}. Put your notes on the desk. Do not start working yet.",
+      "Choose: do one small action, or stop here."
+    ],
+    "phrasings": [
+      "What if you just got things ready for {task}?",
+      "Setting up counts as starting."
+    ],
+    "why_it_works": "Preparing removes friction for later, and it often slides naturally into starting.",
+    "tags": ["setup", "environment", "friction"]
+  },
+  {
+    "id": "fidget_focus",
+    "name": "Busy hands",
+    "for_state": ["stuck", "restuck"],
+    "min_energy": 2,
+    "modality": "sensory",
+    "size": "tiny",
+    "steps": [
+      "Grab something for your hands — a fidget, a pen to click, a hair tie — then look at {task}.",
+      "Keep fidgeting while you do one small piece."
+    ],
+    "literal_version": [
+      "Hold a small object you can fidget with. Then open {task}.",
+      "Do one small part of {task} while holding the object."
+    ],
+    "phrasings": [
+      "Restless? Let your hands have something to do.",
+      "A fidget might help {task} feel easier."
+    ],
+    "why_it_works": "Small movements can give a restless ADHD brain the stimulation it seeks, freeing attention for the task.",
+    "tags": ["sensory", "fidget", "stimulation"]
+  }
+]

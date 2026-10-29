@@ -1,0 +1,94 @@
+/*
+  Nudge design tokens — shared by extension and dashboard.
+  Calm, muted palette. There is intentionally NO red / warning colour.
+  "Attention" uses soft lavender, never alarm colours.
+*/
+:root {
+  --n-bg: #f6f5f1;          /* warm paper */
+  --n-surface: #ffffff;
+  --n-surface-2: #efeee8;
+  --n-border: #dedbd2;
+  --n-text: #2d3833;
+  --n-text-muted: #5f6b65;  /* ≥ 4.5:1 on --n-bg */
+  --n-accent: #4f7d66;      /* sage (theme-able) */
+  --n-accent-soft: #e4efe8;
+  --n-accent-text: #ffffff;
+  --n-calm: #6c5fa0;        /* lavender — used instead of warning colours */
+  --n-calm-soft: #ece8f6;
+  --n-sun: #b58a3c;         /* warm sand for celebrations */
+  --n-sun-soft: #f6eedd;
+  --n-focus: #3b6fb0;
+  --n-radius: 16px;
+  --n-radius-sm: 10px;
+  --n-shadow: 0 1px 2px rgba(30, 40, 35, 0.06), 0 6px 24px rgba(30, 40, 35, 0.06);
+  --n-tap: 48px;            /* minimum tap target */
+  --n-font: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --n-font-dyslexic: 'Lexend', 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --n-text-scale: 1;
+  --n-motion: 1;            /* set to 0 for reduced motion */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --n-bg: #181c1b;
+    --n-surface: #222826;
+    --n-surface-2: #2a312e;
+    --n-border: #38413d;
+    --n-text: #e5ebe7;
+    --n-text-muted: #a9b5ae;
+    --n-accent: #86b79d;
+    --n-accent-soft: #2b3b33;
+    --n-accent-text: #12241a;
+    --n-calm: #b3a7e0;
+    --n-calm-soft: #312c45;
+    --n-sun: #d9b56e;
+    --n-sun-soft: #3a3324;
+    --n-focus: #8fb7ee;
+    --n-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 24px rgba(0, 0, 0, 0.25);
+  }
+}
+
+:root[data-theme='dark'] {
+  --n-bg: #181c1b;
+  --n-surface: #222826;
+  --n-surface-2: #2a312e;
+  --n-border: #38413d;
+  --n-text: #e5ebe7;
+  --n-text-muted: #a9b5ae;
+  --n-accent: #86b79d;
+  --n-accent-soft: #2b3b33;
+  --n-accent-text: #12241a;
+  --n-calm: #b3a7e0;
+  --n-calm-soft: #312c45;
+  --n-sun: #d9b56e;
+  --n-sun-soft: #3a3324;
+  --n-focus: #8fb7ee;
+}
+
+/* High contrast */
+:root[data-contrast='high'] {
+  --n-bg: #ffffff;
+  --n-surface: #ffffff;
+  --n-surface-2: #f2f2f2;
+  --n-border: #1a1a1a;
+  --n-text: #000000;
+  --n-text-muted: #262626;
+  --n-accent: #1f5a3e;
+  --n-accent-soft: #dff0e6;
+  --n-calm: #3f2f86;
+  --n-calm-soft: #e8e3fb;
+  --n-focus: #0b4fd6;
+}
+
+/* Theme accents (unlockable, cosmetic only) */
+:root[data-accent='dusk'] { --n-accent: #6d5f9c; --n-accent-soft: #ece8f5; }
+:root[data-accent='tide'] { --n-accent: #42718b; --n-accent-soft: #e2edf3; }
+:root[data-accent='clay'] { --n-accent: #8e6849; --n-accent-soft: #f3ebe4; }
+:root[data-accent='moss'] { --n-accent: #5c6d3d; --n-accent-soft: #eef0e4; }
+
+:root[data-font='dyslexic'] { --n-font: var(--n-font-dyslexic); letter-spacing: 0.02em; word-spacing: 0.08em; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion='on']) { --n-motion: 0; }
+}
+:root[data-motion='off'] { --n-motion: 0; }
