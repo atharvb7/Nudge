@@ -11,7 +11,7 @@ const HIGH_RISK: RegExp[] = [
   /\b(take|taking|end|ending)\s+my\s+(own\s+)?life\b/i,
   /\bwant(ing)?\s+to\s+die\b/i,
   /\bwish\s+(i\s+(was|were)\s+dead|i\s+could\s+die|i\s+(was|were)n['’]?t\s+(alive|here|born))\b/i,
-  /\b(don['’]?t|do\s+not)\s+want\s+to\s+(be\s+alive|live|exist|wake\s+up)\b/i,
+  /\b(don['’]?t|do\s+not)\s+want\s+to\s+(be\s+alive|live|exist|wake\s+up|be\s+here\s+any\s*more)\b/i,
   /\bself[\s-]?harm(ing)?\b/i,
   /\boverdos(e|ing)\b/i,
   /\bno\s+(reason|point)\s+(in\s+|to\s+)?(living|being\s+alive|going\s+on|live)\b/i,

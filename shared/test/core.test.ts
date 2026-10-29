@@ -87,6 +87,7 @@ describe('crisis detection', () => {
     expect(detectCrisis('I feel so hopeless about everything')).toBe('concern');
     expect(detectCrisis('i want to disappear')).toBe('concern');
     expect(detectCrisis('honestly kms')).toBe('high');
+    expect(detectCrisis("I don't want to be here anymore")).toBe('high');
     expect(detectCrisis('sometimes I wish I never wake up')).toBe('concern');
   });
   it('ignores common idioms', () => {
