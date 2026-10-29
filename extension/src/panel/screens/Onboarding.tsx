@@ -86,7 +86,7 @@ export function Onboarding({ settings, inTab, onDone }: { settings: Settings; in
 
       {step === 1 && (
         <section className="stack" aria-labelledby="ob2">
-          <h1 id="ob2">How should I talk?</h1>
+          <h1 id="ob2">How would you like me to talk?</h1>
           <div className="choice-grid" role="radiogroup" aria-label="Wording style">
             <button type="button" role="radio" aria-checked={wording === 'warm'} className="choice" onClick={() => setWording('warm')}>
               <span style={{ fontWeight: 700 }}>Warm &amp; casual</span>
