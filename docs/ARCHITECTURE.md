@@ -109,9 +109,10 @@ Crisis detection also runs locally first (`detectCrisis`) so it works offline.
 
 ## Dashboard ↔ extension bridge (`shared/src/bridge.ts`)
 
-Dashboard posts `{ source: "nudge-dashboard", id, type, payload }` to `window`.
+Dashboard posts `{ source: "nudge-dashboard", id, request: BridgeRequest }` to `window`.
 Bridge content script (only on localhost:3000 / 127.0.0.1:3000) forwards to the
-service worker and posts back `{ source: "nudge-extension", id, ok, data | error }`.
+service worker and posts back `{ source: "nudge-extension", type: "reply", id, ok, data | error }`.
+`getSnapshot` replies with a `DashboardSnapshot` (`snapshotOf(store, "extension")`).
 On load the bridge posts `{ source: "nudge-extension", type: "hello", version }`.
 If no hello arrives within ~800 ms the dashboard runs in **demo mode** using
 `seedDemoData()` stored in `localStorage` (clearly labelled).
