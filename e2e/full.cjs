@@ -357,11 +357,41 @@ async function gotoDash(page, route = '/', base = DASH) {
       const { inferences } = await storeGet('inferences');
       const target = [...inferences].reverse().find((i) => (i.state === 'stuck' || i.state === 'restuck') && !i.feedback);
       assert(target, 'no unrated stuck inference');
-      const card = dash.locator('li, article').filter({ hasText: target.reason.slice(0, 40) }).first();
+      const card = dash.locator(`li[data-ids~="${target.id}"]`).first();
       await card.getByRole('button', { name: 'Wrong' }).click();
       await until(async () => (await storeGet('settings')).settings.sensitivity.stuck > before, { msg: 'sensitivity up' });
       const after = (await storeGet('settings')).settings.sensitivity.stuck;
       await dash.getByText(/stronger signals/).first().waitFor();
+      return `${before} → ${after}`;
+    });
+
+    await test('repeated stuck moments are grouped; one “Wrong” covers the group and tunes once', async () => {
+      const ids = await sw.evaluate(async () => {
+        const { inferences } = await chrome.storage.local.get('inferences');
+        const base = new Date();
+        base.setHours(14, 0, 0, 0);
+        const add = [0, 12, 25].map((m, i) => ({ id: 'grp_' + i, t: base.getTime() + m * 60000, state: 'stuck', reason: `Switched tabs ${10 + i} times in 5 min, came back to DBMS_Assignment.pdf 3 times.`, acted: 'none' }));
+        await chrome.storage.local.set({ inferences: [...inferences, ...add] });
+        return add.map((a) => a.id);
+      });
+      const before = (await storeGet('settings')).settings.sensitivity.stuck;
+      await gotoDash(dash, '/noticed');
+      const row = dash.locator(`li[data-ids~="${ids[0]}"]`);
+      await row.waitFor();
+      const txt = await row.innerText();
+      assert(/3 stuck moments this afternoon/.test(txt), 'group summary missing: ' + txt.slice(0, 120));
+      assert((await row.getByRole('button', { name: 'Wrong' }).count()) === 1, 'more than one Wrong button in group');
+      await dash.getByText('Getting stuck is normal.').waitFor();
+      await shot(dash, 'noticed-grouped', false);
+      await row.getByRole('button', { name: 'Wrong' }).click();
+      await until(async () => {
+        const { inferences } = await storeGet('inferences');
+        return ids.every((id) => inferences.find((i) => i.id === id).feedback === 'wrong');
+      }, { msg: 'all grouped marked wrong' });
+      await sleep(600);
+      const after = (await storeGet('settings')).settings.sensitivity.stuck;
+      const expected = Math.min(2.5, Number((before * 1.2).toFixed(3)));
+      assert(Math.abs(after - expected) < 0.002, `sensitivity ${before} → ${after}, expected ${expected}`);
       return `${before} → ${after}`;
     });
 
@@ -377,6 +407,39 @@ async function gotoDash(page, route = '/', base = DASH) {
       assert(shown.length === expected.length, `count ${shown.length} vs ${expected.length}`);
       assert(JSON.stringify(shown) === JSON.stringify(expected), `order differs: ${shown.slice(0, 3)} vs ${expected.slice(0, 3)}`);
       return shown.slice(0, 3).join(', ');
+    });
+
+    await test('literal wording: energy dial uses digits and plain words', async () => {
+      await gotoDash(dash, '/settings');
+      await dash.getByText('Clear & literal', { exact: true }).click();
+      await until(async () => (await storeGet('settings')).settings.wordingStyle === 'literal', { msg: 'literal' });
+      await gotoDash(dash, '/');
+      await dash.getByRole('radio', { name: '1 — Very low energy' }).waitFor();
+      const spoons = await dash.locator('#energy').innerText();
+      assert(!/🥄|spoon/i.test(spoons), 'spoon metaphor still shown in literal mode');
+      await shot(dash, 'today-literal', false);
+      await gotoDash(dash, '/settings');
+      await dash.getByText('Warm & casual', { exact: true }).click();
+      await until(async () => (await storeGet('settings')).settings.wordingStyle === 'warm', { msg: 'warm' });
+    });
+
+    await test('works: bar shows 👍 ÷ ratings, and a bad week says “Nothing has clicked yet”', async () => {
+      const saved = (await storeGet('stats')).stats;
+      await sw.evaluate(() => chrome.storage.local.set({ stats: { ugly_first_draft: { up: 0, down: 2, skip: 0, shown: 2, phrasingIndex: 0 }, change_location: { up: 0, down: 1, skip: 0, shown: 1, phrasingIndex: 0 } } }));
+      await gotoDash(dash, '/works');
+      await dash.getByText(/Nothing has clicked yet/).waitFor();
+      const widths = await dash.locator('#ranked ol > li .bg-accent').evaluateAll((els) => els.map((e) => e.style.width));
+      assert(widths.every((w) => w === '0%'), 'bars not empty: ' + widths.join(','));
+      const ranks = await dash.locator('#ranked ol > li span.w-6').count();
+      assert(ranks === 0, 'rank numbers shown on a bad week');
+      await shot(dash, 'works-bad-week', false);
+      await sw.evaluate((st) => chrome.storage.local.set({ stats: st }), saved);
+    });
+
+    await test('wins chart: quiet days show no “0”', async () => {
+      await gotoDash(dash, '/wins');
+      const labels = await dash.locator('figure > div').first().locator('span').allInnerTexts();
+      assert(!labels.some((t) => t.trim() === '0'), 'zero printed: ' + labels.join(','));
     });
 
     await test('settings from dashboard apply in the side panel', async () => {

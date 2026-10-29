@@ -37,8 +37,10 @@ function WeekBars({ wins }: { wins: Win[] }) {
     <figure>
       <div className="flex h-44 items-end gap-2 sm:gap-4" aria-hidden="true">
         {days.map((d) => (
-          <div key={d.k} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${d.full}: ${d.count} ${d.count === 1 ? 'attempt' : 'attempts'}`}>
-            <span className="text-sm font-semibold text-ink">{d.count}</span>
+          <div key={d.k} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={d.count ? `${d.full}: ${d.count} ${d.count === 1 ? 'attempt' : 'attempts'}` : `${d.full}: a quiet day`}>
+            <span aria-hidden="true" className="min-h-[1.25rem] text-sm font-semibold text-ink">
+              {d.count ? d.count : ''}
+            </span>
             <div
               className={`w-full max-w-[3rem] rounded-t-[4px] ${d.count ? 'bg-accent' : 'bg-surface2'}`}
               style={{ height: d.count ? `${Math.max(8, (d.count / max) * 100)}%` : '6px' }}
@@ -54,7 +56,7 @@ function WeekBars({ wins }: { wins: Win[] }) {
         ))}
       </div>
       <figcaption className="sr-only">
-        Attempts over the last 7 days: {days.map((d) => `${d.full} ${d.count}`).join(', ')}.
+        Attempts over the last 7 days: {days.map((d) => `${d.full}: ${d.count ? d.count : 'a quiet day'}`).join(', ')}.
       </figcaption>
     </figure>
   );

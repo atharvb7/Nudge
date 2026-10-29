@@ -11,20 +11,23 @@ function band(rate: number): { label: string; tone: 'accent' | 'calm' | 'neutral
   return { label: 'Not your thing, for now', tone: 'neutral' };
 }
 
-function StrategyRow({ r, rank }: { r: RankedStrategy; rank: number }) {
+function StrategyRow({ r, rank }: { r: RankedStrategy; rank: number | null }) {
   const [open, setOpen] = useState(false);
   const card = STRATEGY_BY_ID[r.id];
   const name = card?.name ?? r.id.replace(/_/g, ' ');
   const b = band(r.rate);
-  const pct = Math.round(r.rate * 100);
   const rated = r.up + r.down;
+  // The bar is literally "how often it helped": 👍 ÷ (👍 + 👎).
+  const pct = rated ? Math.round((r.up / rated) * 100) : 0;
   return (
     <li className="py-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <div className="flex min-w-0 items-center gap-3 sm:w-64 sm:shrink-0">
-          <span aria-hidden="true" className="w-6 shrink-0 text-right text-sm font-bold text-muted">
-            {rank}
-          </span>
+          {rank !== null ? (
+            <span aria-hidden="true" className="w-6 shrink-0 text-right text-sm font-bold text-muted">
+              {rank}
+            </span>
+          ) : null}
           <span className="min-w-0 break-words font-semibold text-ink">{name}</span>
         </div>
         <div className="flex flex-1 items-center gap-3 pl-9 sm:pl-0">
@@ -33,7 +36,7 @@ function StrategyRow({ r, rank }: { r: RankedStrategy; rank: number }) {
             title={`${name}: helped ${r.up} of ${rated} times you rated it`}
             aria-hidden="true"
           >
-            <div className="absolute inset-y-0 left-0 rounded-full bg-accent" style={{ width: `${Math.max(4, pct)}%` }} />
+            <div className="absolute inset-y-0 left-0 rounded-full bg-accent" style={{ width: `${pct}%` }} />
           </div>
           <span className="w-28 shrink-0 text-sm text-ink">
             👍 {r.up} <span className="text-muted">·</span> 👎 {r.down}
@@ -73,6 +76,19 @@ export default function WorksPage() {
 
   if (!snapshot) return <PageSkeleton />;
   const totalRatings = ranked.reduce((a, r) => a + r.up + r.down, 0);
+  const noneClicked = ranked.length > 0 && ranked.every((r) => r.up === 0);
+  const untriedCard = (
+    <Card id="untried" title="Ideas you haven't tried yet" description="No pressure. They're here if you're curious.">
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {untried.map((c) => (
+          <li key={c.id} className="rounded-soft border border-line bg-surface2/60 p-4">
+            <p className="font-semibold text-ink">{c.name}</p>
+            <p className="mt-1 text-sm text-muted">{c.why_it_works}</p>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
 
   return (
     <div className="n-rise">
@@ -81,15 +97,26 @@ export default function WorksPage() {
         lede="Built from your own 👍 and 👎 after each idea. I mostly suggest what helps you, and now and then something new — so favourites don't wear out."
       />
       <div className="flex flex-col gap-6">
+        {noneClicked ? (
+          <div className="rounded-card border border-line bg-calm-soft p-5 text-ink" role="note">
+            <p className="text-lg font-semibold">Nothing has clicked yet — that&apos;s useful to know.</p>
+            <p className="mt-1 text-sm text-muted">
+              Every 👎 tells me what to try less often. Some fresh ideas are below — no pressure to try any of them.
+            </p>
+          </div>
+        ) : null}
+
+        {noneClicked ? untriedCard : null}
+
         <Card
           id="ranked"
-          title="Your strategies, ranked"
+          title={noneClicked ? 'Tried so far' : 'Your strategies, ranked'}
           description={totalRatings ? `Based on ${totalRatings} quick ratings. The bar shows how often each one helped.` : undefined}
         >
           {ranked.length ? (
             <ol className="divide-y divide-line">
               {ranked.map((r, i) => (
-                <StrategyRow key={r.id} r={r} rank={i + 1} />
+                <StrategyRow key={r.id} r={r} rank={noneClicked ? null : i + 1} />
               ))}
             </ol>
           ) : (
@@ -97,16 +124,7 @@ export default function WorksPage() {
           )}
         </Card>
 
-        <Card id="untried" title="Ideas you haven't tried yet" description="No pressure. They're here if you're curious.">
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {untried.map((c) => (
-              <li key={c.id} className="rounded-soft border border-line bg-surface2/60 p-4">
-                <p className="font-semibold text-ink">{c.name}</p>
-                <p className="mt-1 text-sm text-muted">{c.why_it_works}</p>
-              </li>
-            ))}
-          </ul>
-        </Card>
+        {noneClicked ? null : untriedCard}
       </div>
     </div>
   );

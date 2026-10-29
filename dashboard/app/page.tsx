@@ -63,6 +63,14 @@ function PlanRow({
   );
 }
 
+const LITERAL_PLAN_MESSAGES: Record<Energy, string> = {
+  1: 'Energy level 1. The list shows one small item. Doing nothing today is also okay.',
+  2: 'Energy level 2. The list shows only the smallest items.',
+  3: 'Energy level 3. The list shows a few small items.',
+  4: 'Energy level 4. You can pick any items you want. You do not need to do all of them.',
+  5: 'Energy level 5. You can pick any items. Breaks are part of the plan.',
+};
+
 function AddItem({ onAdd }: { onAdd: (title: string, size: PlanItem['size']) => Promise<boolean> }) {
   const [title, setTitle] = useState('');
   const [size, setSize] = useState<PlanItem['size']>('small');
@@ -190,19 +198,30 @@ export default function TodayPage() {
         <div className="flex flex-col gap-6">
           <Card id="energy" title="How's your energy?" description="Your plan reshapes itself around this. Low energy means fewer, smaller things.">
             <EnergyDial
+              style={style}
               value={energy}
               onChange={(e) => {
                 void act({ type: 'setEnergy', energy: e });
                 setKeptAnyway(null);
               }}
             />
-            {shuffle ? <p className="mt-3 rounded-soft bg-surface2 p-3 text-sm text-ink">{shuffle.message}</p> : null}
+            {shuffle ? (
+              <p className="mt-3 rounded-soft bg-surface2 p-3 text-sm text-ink">
+                {style === 'literal' && energy ? LITERAL_PLAN_MESSAGES[energy] : shuffle.message}
+              </p>
+            ) : null}
           </Card>
 
           <div className="hidden flex-col gap-6 lg:flex">{extras}</div>
         </div>
 
-        <Card id="plan" title="Today's gentle plan" description={energy ? `Shaped for ${energy} ${energy === 1 ? 'spoon' : 'spoons'}.` : 'Set your energy to shape this list.'}>
+        <Card id="plan" title="Today's gentle plan" description={
+            energy
+              ? style === 'literal'
+                ? `Shaped for energy level ${energy} of 5.`
+                : `Shaped for ${energy} ${energy === 1 ? 'spoon' : 'spoons'}.`
+              : 'Set your energy to shape this list.'
+          }>
           {offer.length ? (
             <div className="mb-5 rounded-soft border border-line bg-sun-soft p-4" role="region" aria-label="Suggestion">
               <p className="font-semibold text-ink">Want to save these for later? No penalty, they&apos;ll wait for you.</p>
