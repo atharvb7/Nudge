@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Nudge — gentle help to start",
+  "short_name": "Nudge",
+  "version": "0.1.0",
+  "description": "A privacy-first companion for task paralysis. Lowers the wall to starting, stays with you, makes rest guilt-free.",
+  "minimum_chrome_version": "116",
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "action": {
+    "default_title": "Nudge — I'm stuck (Ctrl+Shift+Space)",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png" }
+  },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "permissions": ["storage", "tabs", "idle", "alarms", "sidePanel", "offscreen"],
+  "host_permissions": ["<all_urls>"],
+  "incognito": "not_allowed",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["http://localhost:3000/*", "http://127.0.0.1:3000/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Ctrl+Shift+Space", "mac": "Command+Shift+Space" },
+      "description": "Open the \"I'm stuck\" panel"
+    },
+    "open-stuck-panel": {
+      "description": "Open the \"I'm stuck\" panel (alternative shortcut)"
+    }
+  }
+}

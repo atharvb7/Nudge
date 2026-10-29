@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  background: var(--n-bg);
+  color: var(--n-text);
+  font-family: var(--n-font);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--n-bg);
+  color: var(--n-text);
+  font-family: var(--n-font);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--n-accent-soft);
+  color: var(--n-text);
+}
+
+:focus-visible {
+  outline: 3px solid var(--n-focus);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Motion: gentle by default, off when reduced. */
+* {
+  transition-duration: calc(180ms * var(--n-motion));
+}
+html[data-motion='off'] *,
+html[data-motion='off'] *::before,
+html[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='on']) *,
+  html:not([data-motion='on']) *::before,
+  html:not([data-motion='on']) *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes n-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.n-rise { animation: n-rise 260ms ease-out both; }
+
+@keyframes n-pulse-soft {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.n-skeleton {
+  background: var(--n-surface-2);
+  border-radius: var(--n-radius-sm);
+  animation: n-pulse-soft 1.6s ease-in-out infinite;
+}
+
+@layer components {
+  .n-card {
+    @apply rounded-card border border-line bg-surface p-5 shadow-card sm:p-6;
+  }
+  .n-btn {
+    @apply inline-flex min-h-tap items-center justify-center gap-2 rounded-full px-5 text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .n-btn-primary {
+    @apply n-btn bg-accent text-accent-ink hover:brightness-95;
+  }
+  .n-btn-soft {
+    @apply n-btn bg-accent-soft text-ink hover:brightness-95;
+  }
+  .n-btn-ghost {
+    @apply n-btn border border-line bg-surface text-ink hover:bg-surface2;
+  }
+  .n-btn-calm {
+    @apply n-btn bg-calm-soft text-ink hover:brightness-95;
+  }
+  .n-input {
+    @apply min-h-tap w-full rounded-soft border border-line bg-surface px-4 text-base text-ink placeholder:text-muted;
+  }
+  .n-label {
+    @apply mb-1 block text-sm font-semibold text-ink;
+  }
+  .n-h1 {
+    @apply text-2xl font-bold tracking-tight text-ink sm:text-3xl;
+  }
+  .n-h2 {
+    @apply text-lg font-bold text-ink sm:text-xl;
+  }
+  .n-lede {
+    @apply mt-1 max-w-2xl text-base text-muted;
+  }
+}
