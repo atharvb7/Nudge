@@ -35,11 +35,32 @@ _IDIOMS = [
     r"\bdie\s+of\s+(?:embarrassment|boredom|cringe|laughter)\b",
     r"\bsuicide\s+squad\b",
     r"\bdeadline\w*\b",
+    r"\bdisappear\s+into\s+(?:a|an|my|the|some)\s+\w+",
+    # Academic topics ("essay on suicide prevention") are coursework, not a disclosure.
+    r"\b(?:essay|paper|report|research|assignment|lecture|presentation|article|chapter|project|study|"
+    r"campaign|module|thesis|seminar|course)s?\s+(?:on|about|regarding|into|covering)\s+(?:\w+\s+){0,2}"
+    r"(?:suicide|self[\s-]?harm)(?:\s+(?:prevention|awareness|statistics|rates?|research|campaigns?))*\b",
 ]
 
-# Tier 1: explicit self-harm or suicidal language.
+# Tier 1: explicit self-harm or suicidal language (with common typos).
 _EXPLICIT = [
     r"\bkill(?:ing)?\s+my\s*self\b",
+    r"\bkil+(?:ing)?\s+my\s*s(?:el|le|ef)l?f?\b",
+    r"\bsu[ie]?c[iu]?d(?:e|al|el|le)s?\b",
+    r"\bend(?:ing)?\s+(?:things|everything)\b",
+    r"\bplan(?:ning)?\s+to\s+end\s+it\b",
+    r"\b(?:started|keep|been)\s+cutting(?:\s+again)?\b",
+    r"\bcutting\s+(?:again|myself|my\s+(?:arms?|wrists?|legs?))\b",
+    r"\bjump(?:ing)?\s+off\s+(?:the\s+|a\s+)?(?:roof|bridge|building|terrace|balcony|cliff|hostel)\b",
+    r"\bsuicide\s+note\b",
+    r"(?:\bnot|n't)\s+worth\s+living\b",
+    # Hindi / Hinglish (romanised)
+    r"\bjeena\s+nahi\b",
+    r"\bmar(?:na|\s+ja(?:a)?na)\s+chaht[aie]\b",
+    r"\bkhud\s*kushi\b",
+    r"\baatm?a?hatya\b",
+    r"\bjeene\s+ka\s+(?:mann|man|mun)\s+nahi\b",
+    r"\bzindagi\s+(?:khatam|khtm)\b",
     r"\bkms\b",
     r"\bend(?:ing)?\s+(?:my|it)\s+(?:life|all)\b",
     r"\bend\s+it\s+all\b",
@@ -74,12 +95,20 @@ _HOPELESS = [
     r"\bfeel(?:ing)?\s+(?:so\s+|completely\s+|totally\s+)?hopeless\b",
     r"\blife\s+is\s+(?:so\s+)?(?:pointless|meaningless|hopeless|not\s+worth\s+it)\b",
     r"\bno\s+way\s+out\b",
+    r"\bwant\s+(?:it\s+all|everything)\s+to\s+(?:stop|end)\b",
+    r"\bsleep\s+forever\b",
+    r"\b(?:nobody|no\s*-?\s*one)\s+would\s+(?:even\s+)?(?:notice|care|miss\s+me)\s+if\s+i\b",
+    r"\beverything\s+(?:is|feels)\s+(?:so\s+)?hopeless\b",
+    r"\b(?:what'?s|whats|what\s+is)\s+the\s+point\s+(?:of|in)\s+(?:living|life|being\s+alive|going\s+on)\b",
+    r"\bsee\s+(?:the|any)\s+point\s+(?:in|of)\s+(?:living|life|going\s+on|being\s+alive)\b",
+    r"\b(?:can'?t|cannot)\s+(?:take|do)\s+(?:this|it)\s+any\s*more\b",
+    r"\bwish\s+i(?:'d|\s+had|\s+would\s+have)\s+never\s+been\s+born\b",
 ]
 
 # Positive-form phrases where a negation right before means the opposite
 # ("I'm not suicidal", "I don't want to die"). Kill/hurt/harm phrases are
 # deliberately not negatable: care comes first.
-_NEGATABLE = re.compile(r"suicid|want|wanna", re.I)
+_NEGATABLE = re.compile(r"su[ie]?c[iu]?d|want|wanna", re.I)
 _NEGATION_BEFORE = re.compile(r"(?:\bnot|n't|\bnever|\bno longer)\s+(?:\w+\s+){0,2}$", re.I)
 
 _IDIOM_RE = [re.compile(p, re.I) for p in _IDIOMS]

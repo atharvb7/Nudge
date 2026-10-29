@@ -22,8 +22,22 @@ HOUSE_RULES = (
     "House rules: never use the words 'should', 'overdue', 'deadline', 'streak' or any form of 'fail'. "
     "No pressure words (must, need to, hurry, lazy). Unfinished work is 'saved for later'. "
     "Keep next_step under 30 words. At most one exclamation mark. Do not mention time pressure, grades or "
-    "consequences. Do not repeat any of the recent phrasings."
+    "consequences. Do not repeat any of the recent phrasings. next_step is ONE action only: no lists, no "
+    "'then', no second step. Ask at most one question, and only as a gentle choice."
 )
+
+STYLE_EXAMPLES = {
+    "warm": (
+        "Style: warm & casual. Good next_step: \"Want to just open DBMS_Assignment.pdf and look at the first "
+        "question? That's the whole step.\" Bad next_step: \"You should finish question 1 now, then start "
+        "question 2.\" (a command, two steps, pressure)."
+    ),
+    "literal": (
+        "Style: clear & literal. Good next_step: \"Open the file DBMS_Assignment.pdf. Read question 1 only.\" "
+        "Bad next_step: \"Dip your toe in and get the ball rolling on the assignment.\" (idioms, vague). "
+        "In literal style, lead must be null."
+    ),
+}
 
 SEQUENCE_SCHEMA = {
     "lead": "optional string or null; a short warm invitation shown above the step (null in literal style)",
@@ -63,7 +77,7 @@ def sequence_messages(req: SequenceRequest, cards: list[Card]) -> list[dict]:
         "energy_1_to_5": req.energy,
         "wording_style": req.wording_style,
         "explain_why": req.explain_why,
-        "what_user_said": req.transcript or None,
+        "what_user_said": (req.transcript[-2000:] or None),
         "history_this_session": [h.model_dump() for h in req.history],
         "recent_phrasings_to_avoid": req.recent_phrasings[-5:],
         "instruction": _ACTION_HINTS.get(req.action, _ACTION_HINTS["start"]),
@@ -79,7 +93,7 @@ def sequence_messages(req: SequenceRequest, cards: list[Card]) -> list[dict]:
         + json.dumps(SEQUENCE_SCHEMA)
     )
     return [
-        {"role": "system", "content": SYSTEM_PROMPT + "\n" + HOUSE_RULES},
+        {"role": "system", "content": SYSTEM_PROMPT + "\n" + HOUSE_RULES + "\n" + STYLE_EXAMPLES[req.wording_style]},
         {"role": "user", "content": user},
     ]
 

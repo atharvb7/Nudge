@@ -72,3 +72,28 @@ Full request/response shapes: `../docs/ARCHITECTURE.md`.
   where available) that is deleted in `finally` as soon as transcription ends.
 * The only thing written to disk is `.chroma/`, the embedding index of the
   public strategy cards.
+
+## Robustness (help never breaks)
+
+* **Sloppy input is coerced, not rejected:**
+  * Out-of-range or non-numeric `energy` is clamped to 1–5.
+  * Unknown `state`/`action`/`wording_style` fall back to `stuck`/`start`/`warm`.
+  * Personal scores are clamped to 0..1 (NaN or None → 0.5).
+  * `null` fields become their defaults.
+* **Size caps:**
+  * Task is trimmed to 300 chars and transcript to 20 000 chars.
+  * Lists are capped (history 6, recent phrasings 10, exclude ids 200).
+  * Text bodies over 1 MB get a gentle `413`.
+* **LLM replies are repaired or replaced:**
+  * Code fences and surrounding prose are stripped.
+  * Wrong types are fixed; for example, `size: "medium"` falls back to the card's size.
+  * A second step ("Then…", numbered lists) is cut off.
+  * More than one question falls back to the card.
+  * Banned words get one retry, then a soft rewrite.
+  * In literal mode, an idiom ("dip your toe in", "get the ball rolling"…) gets one retry, then the literal card is used.
+  * The retry is skipped when time is nearly up, so the extension's own timeout is never hit.
+* **Crisis check:** ~65 positive and ~40 negative test phrases, including typos ("kil myself", "suicidel"), indirect phrasing and romanised Hindi/Hinglish ("mujhe jeena nahi hai", "mar jana chahta hu"). Coursework topics such as "essay on suicide prevention" don't trigger it.
+* **Logging:** a test asserts that no user text ever reaches the logs, including in validation-error paths. `422` responses list only the field names.
+* **Test commands:**
+  * `python -m pytest -q`. `tests/test_llm_pipeline.py` runs the real HTTP path against a scripted fake Ollama server and a mocked Gemini transport.
+  * `NUDGE_TEST_MINILM=1 python -m pytest -q` adds the MiniLM + Chroma tests.

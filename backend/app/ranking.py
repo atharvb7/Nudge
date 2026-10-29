@@ -11,7 +11,7 @@ import random
 from dataclasses import dataclass
 
 from .models import SequenceRequest
-from .retrieval import get_retriever
+from . import retrieval
 from .strategies import Card, load_cards
 
 DEFAULT_PERSONAL = 0.5
@@ -58,7 +58,7 @@ def wants_rest(req: SequenceRequest) -> bool:
 
 def rank(req: SequenceRequest, limit: int = 5) -> list[Ranked]:
     cards = load_cards()
-    sims = get_retriever().similarities(build_query(req))
+    sims = retrieval.similarities(build_query(req))
     top = max(sims.values(), default=0.0)
     personal = {p.id: p.score for p in req.top_strategies}
     rng = random.Random(_seed(req))

@@ -233,3 +233,20 @@ def reset_retriever() -> None:
 
 def retriever_name() -> str:
     return get_retriever().name
+
+
+def similarities(query: str) -> dict[str, float]:
+    """Semantic similarities, falling back to keywords if the vector store errors mid-request."""
+    r = get_retriever()
+    try:
+        return r.similarities(query)
+    except Exception as exc:
+        if r.name == "keyword":
+            raise
+        log.info("Semantic query failed (%s); using keyword retriever", type(exc).__name__)
+        global _keyword
+        with _lock:
+            if _keyword is None:
+                _keyword = KeywordRetriever(load_cards())
+            kw = _keyword
+        return kw.similarities(query)

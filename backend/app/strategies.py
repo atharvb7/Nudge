@@ -76,7 +76,13 @@ def _parse(raw: dict) -> Card:
 
 @lru_cache(maxsize=4)
 def _load(path: str) -> tuple[Card, ...]:
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    p = Path(path)
+    if not p.is_file():
+        raise FileNotFoundError(
+            f"Nudge strategy cards not found at {path}. Run from the repo (shared/src/strategies.json) "
+            "or set NUDGE_STRATEGIES_PATH."
+        )
+    data = json.loads(p.read_text(encoding="utf-8"))
     cards = tuple(_parse(c) for c in data if c.get("id") and c.get("steps"))
     if not cards:
         raise ValueError(f"No strategy cards found in {path}")

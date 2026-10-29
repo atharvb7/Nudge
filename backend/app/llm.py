@@ -23,16 +23,38 @@ class LLMUnavailable(Exception):
     pass
 
 
+_FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)```", re.S | re.I)
+
+
 def _parse_json(text: str) -> dict[str, Any]:
+    """Pull the first JSON object out of a model reply.
+
+    Small local models often wrap JSON in code fences or add prose before or
+    after it ("Sure! Here you go: {...} Hope this helps {:)}").
+    """
     text = (text or "").strip()
-    # Some models wrap JSON in code fences or add prose around it.
-    fenced = re.search(r"\{.*\}", text, re.S)
-    if fenced:
-        text = fenced.group(0)
-    data = json.loads(text)
-    if not isinstance(data, dict):
-        raise ValueError("LLM reply is not a JSON object")
-    return data
+    if not text:
+        raise ValueError("empty LLM reply")
+    candidates = [text]
+    fence = _FENCE_RE.search(text)
+    if fence:
+        candidates.insert(0, fence.group(1).strip())
+    decoder = json.JSONDecoder()
+    for cand in candidates:
+        try:
+            data = json.loads(cand)
+            if isinstance(data, dict):
+                return data
+        except ValueError:
+            pass
+        for m in re.finditer(r"\{", cand):
+            try:
+                data, _ = decoder.raw_decode(cand, m.start())
+            except ValueError:
+                continue
+            if isinstance(data, dict):
+                return data
+    raise ValueError("LLM reply has no JSON object")
 
 
 async def _ollama(messages: list[dict]) -> dict[str, Any]:

@@ -53,6 +53,24 @@ _REWRITES: list[tuple[str, str]] = [
 _REWRITES_RE = [(re.compile(p, re.I), r) for p, r in _REWRITES]
 
 
+# Idioms and vague phrases that break "Clear & literal" mode for autistic users.
+IDIOM_RE = re.compile(
+    r"\b(dip (?:your|a) toe|get the ball rolling|chip away|bite[- ]sized|knock (?:it|this|that) out|"
+    r"dive (?:in|into|right in)|jump (?:in|into|right in)|ease (?:in|into)|warm up your brain|"
+    r"take the plunge|break the ice|in the zone|on a roll|tackle|crush (?:it|this)|nail (?:it|this)|"
+    r"low[- ]hanging fruit|baby steps?|one bite at a time|eat the frog|get your feet wet|"
+    r"hit the ground running|piece of cake|light a fire|get the juices flowing|kick ?start|"
+    r"wrap your head around|give it a whirl|have a go|take a stab|tip ?toe|little nudge|"
+    r"sink your teeth|the ball is in your court|step into|get going|roll with it|"
+    r"a bit of|somehow|something like|kind of|sort of|maybe just|whatever feels right)\b",
+    re.I,
+)
+
+
+def find_idioms(text: str) -> list[str]:
+    return [m.group(0) for m in IDIOM_RE.finditer(text or "")]
+
+
 def find_banned(text: str) -> list[str]:
     t = text or ""
     return [m.group(0) for m in BANNED_RE.finditer(t)] + [m.group(0) for m in SHAME_RE.finditer(t)]
@@ -84,6 +102,12 @@ def soft_rewrite(text: str) -> str:
         t = t[0].upper() + t[1:]
     return t
 
+
+IDIOM_REMINDER = (
+    "Rewrite your answer in Clear & literal style. It used idioms or vague phrases: {words}. "
+    "Use exact, concrete actions with the specific file or item name (for example 'Open the file "
+    "DBMS_Assignment.pdf'). No metaphors, no idioms. Same JSON format."
+)
 
 REMINDER = (
     "Rewrite your answer. It used words that break Nudge's copy rules: {words}. "

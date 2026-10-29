@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+import math
+from typing import Any, Literal, Optional, get_args
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -14,16 +15,97 @@ Size = Literal["tiny", "small"]
 
 BUTTONS: list[str] = ["done", "too_big", "smaller", "different", "rest"]
 
+# Input limits. Help must never break, so oversized or sloppy input is
+# trimmed / coerced instead of rejected (crisis checks still see the long text).
+MAX_TASK = 300
+MAX_TEXT = 20_000
+MAX_ITEM = 500
+MAX_LIST = 100
+
+
+def _text(v: Any, limit: int) -> str:
+    if v is None:
+        return ""
+    if not isinstance(v, str):
+        v = str(v) if isinstance(v, (int, float)) else ""
+    return v.replace("\x00", "")[:limit]
+
+
+def _opt_text(v: Any, limit: int) -> Optional[str]:
+    t = _text(v, limit)
+    return t if t.strip() else None
+
+
+def _choice(v: Any, allowed: tuple, default: str) -> str:
+    return v if isinstance(v, str) and v in allowed else default
+
+
+def _energy(v: Any) -> int:
+    try:
+        f = float(v)
+        if math.isnan(f):
+            return 3
+        return max(1, min(5, int(round(f))))
+    except (TypeError, ValueError, OverflowError):
+        return 3
+
+
+def _list(v: Any, limit: int = MAX_LIST) -> list:
+    if v is None:
+        return []
+    return list(v)[-limit:] if isinstance(v, (list, tuple)) else []
+
+
+def _str_list(v: Any, limit: int = MAX_LIST, item: int = MAX_ITEM) -> list[str]:
+    return [_text(x, item) for x in _list(v, limit) if isinstance(x, str)]
+
+
+def _region_code(v: Any) -> Optional[str]:
+    t = _text(v, 8).strip().upper()
+    return t or None
+
 
 class HistoryItem(BaseModel):
     step: str = ""
     outcome: Optional[Outcome] = None
     strategy_id: Optional[str] = None
 
+    @field_validator("step", mode="before")
+    @classmethod
+    def _step(cls, v):
+        return _text(v, MAX_ITEM)
+
+    @field_validator("outcome", mode="before")
+    @classmethod
+    def _outcome(cls, v):
+        return v if v in get_args(Outcome) else None
+
+    @field_validator("strategy_id", mode="before")
+    @classmethod
+    def _sid(cls, v):
+        return _opt_text(v, 80)
+
 
 class PersonalScore(BaseModel):
     id: str
-    score: float = Field(0.5, ge=0.0, le=1.0)
+    score: float = 0.5
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def _id(cls, v):
+        return _text(v, 80)
+
+    @field_validator("score", mode="before")
+    @classmethod
+    def _score(cls, v):
+        # Thompson samples live in 0..1; clamp anything else (NaN/None → neutral).
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            return 0.5
+        if math.isnan(f):
+            return 0.5
+        return max(0.0, min(1.0, f))
 
 
 class Resource(BaseModel):
@@ -63,15 +145,67 @@ class SequenceRequest(BaseModel):
     @field_validator("energy", mode="before")
     @classmethod
     def _clamp_energy(cls, v):  # be forgiving: clamp instead of 422 for a UI slider
-        try:
-            return max(1, min(5, int(v)))
-        except (TypeError, ValueError):
-            return 3
+        return _energy(v)
 
-    @field_validator("history")
+    @field_validator("task", mode="before")
+    @classmethod
+    def _task(cls, v):
+        return _text(v, MAX_TASK)
+
+    @field_validator("task_tab_title", mode="before")
+    @classmethod
+    def _title(cls, v):
+        return _opt_text(v, MAX_TASK)
+
+    @field_validator("transcript", mode="before")
+    @classmethod
+    def _transcript(cls, v):
+        return _text(v, MAX_TEXT)
+
+    @field_validator("state", mode="before")
+    @classmethod
+    def _state(cls, v):
+        return _choice(v, get_args(State), "stuck")
+
+    @field_validator("action", mode="before")
+    @classmethod
+    def _action(cls, v):
+        return _choice(v, get_args(Action), "start")
+
+    @field_validator("wording_style", mode="before")
+    @classmethod
+    def _style(cls, v):
+        return _choice(v, get_args(WordingStyle), "warm")
+
+    @field_validator("explain_why", mode="before")
+    @classmethod
+    def _why(cls, v):
+        return v is True or (isinstance(v, str) and v.lower() == "true")
+
+    @field_validator("history", mode="before")
     @classmethod
     def _cap_history(cls, v):
-        return v[-6:]
+        return [h for h in _list(v, 6) if isinstance(h, dict)]
+
+    @field_validator("top_strategies", mode="before")
+    @classmethod
+    def _cap_top(cls, v):
+        return [p for p in _list(v, 200) if isinstance(p, dict) and p.get("id")]
+
+    @field_validator("exclude_ids", mode="before")
+    @classmethod
+    def _cap_exclude(cls, v):
+        return _str_list(v, 200, 80)
+
+    @field_validator("recent_phrasings", mode="before")
+    @classmethod
+    def _cap_recent(cls, v):
+        return _str_list(v, 10, MAX_ITEM)
+
+    @field_validator("region", mode="before")
+    @classmethod
+    def _region(cls, v):
+        return _region_code(v)
 
 
 class SequenceResponse(BaseModel):
@@ -99,10 +233,27 @@ class OfframpRequest(BaseModel):
     @field_validator("energy", mode="before")
     @classmethod
     def _clamp_energy(cls, v):
-        try:
-            return max(1, min(5, int(v)))
-        except (TypeError, ValueError):
-            return 3
+        return _energy(v)
+
+    @field_validator("task", mode="before")
+    @classmethod
+    def _task(cls, v):
+        return _text(v, MAX_TASK)
+
+    @field_validator("progress", mode="before")
+    @classmethod
+    def _progress(cls, v):
+        return _str_list(v, 20, MAX_ITEM)
+
+    @field_validator("wording_style", mode="before")
+    @classmethod
+    def _style(cls, v):
+        return _choice(v, get_args(WordingStyle), "warm")
+
+    @field_validator("region", mode="before")
+    @classmethod
+    def _region(cls, v):
+        return _region_code(v)
 
 
 class OfframpResponse(BaseModel):
@@ -122,10 +273,22 @@ class BrainDumpRequest(BaseModel):
     @field_validator("energy", mode="before")
     @classmethod
     def _clamp_energy(cls, v):
-        try:
-            return max(1, min(5, int(v)))
-        except (TypeError, ValueError):
-            return 3
+        return _energy(v)
+
+    @field_validator("transcript", mode="before")
+    @classmethod
+    def _transcript(cls, v):
+        return _text(v, MAX_TEXT)
+
+    @field_validator("wording_style", mode="before")
+    @classmethod
+    def _style(cls, v):
+        return _choice(v, get_args(WordingStyle), "warm")
+
+    @field_validator("region", mode="before")
+    @classmethod
+    def _region(cls, v):
+        return _region_code(v)
 
 
 class BrainDumpGroup(BaseModel):
@@ -151,3 +314,13 @@ class BrainDumpResponse(BaseModel):
 class SafetyCheckRequest(BaseModel):
     text: str = ""
     region: Optional[str] = None
+
+    @field_validator("text", mode="before")
+    @classmethod
+    def _t(cls, v):
+        return _text(v, MAX_TEXT * 5)
+
+    @field_validator("region", mode="before")
+    @classmethod
+    def _region(cls, v):
+        return _region_code(v)

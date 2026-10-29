@@ -40,7 +40,8 @@ def looks_like_feeling(text: str) -> bool:
 
 
 def task_label(req_task: str, tab_title: str | None, literal: bool) -> str:
-    task = (req_task or "").strip().rstrip(".")
+    task = re.sub(r"[{}]", "", (req_task or "")).strip().rstrip(".")
+    tab_title = re.sub(r"[{}]", "", tab_title or "")
     if looks_like_feeling(task):
         task = ""
     title = (tab_title or "").strip()
