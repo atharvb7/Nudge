@@ -156,7 +156,7 @@ function mockBackend() {
     await task.screenshot({ path: path.join(outDir, '02-off-for-today-note.png') });
     check('the kind note stays visible after closing', (await overlayCount()) === 1);
 
-    console.log('DBG feats', ((await store('features')).features || []).length, JSON.stringify((await sesStore(['windowStart','lastState'])))); 
+    console.log('DBG feats', Math.round(process.uptime()), ((await store('features')).features || []).length, JSON.stringify((await sesStore(['windowStart','lastState','lastTickError'])))); 
     // ── 2. tiny viewport ──
     await task.setViewportSize({ width: 320, height: 480 });
     await simulate('restuck');
@@ -196,7 +196,7 @@ function mockBackend() {
     await csp.screenshot({ path: path.join(outDir, '04-strict-csp.png') });
     await csp.close();
 
-    console.log('DBG feats5', ((await store('features')).features || []).length, JSON.stringify((await sesStore(['windowStart','lastState']))));
+    console.log('DBG feats5', Math.round(process.uptime()), ((await store('features')).features || []).length, JSON.stringify((await sesStore(['windowStart','lastState','lastTickError']))));
     // ── 5. pinned tab navigating to another site ──
     await task.bringToFront();
     await panel.evaluate(() => chrome.storage.session.set({ rawEvents: [] }));
@@ -241,7 +241,11 @@ function mockBackend() {
       badge = await panel.evaluate(() => chrome.action.getBadgeText({}));
     }
     check('break-end alarm still fires after a worker restart', badge === '', `badge="${badge}"`);
-    const featsAfter = ((await store('features')).features || []).length;
+    let featsAfter = featsBefore;
+    for (let i = 0; i < 40 && featsAfter <= featsBefore; i++) {
+      await sleep(1000);
+      featsAfter = ((await store('features')).features || []).length;
+    }
     check('30 s sensing ticks continue after the restart', featsAfter > featsBefore, `${featsBefore} → ${featsAfter}`);
     const guardAfter = (await store('guard')).guard;
     check('no extra nudge was fired by the restart', guardAfter.lastAutoNudgeAt === guardBefore.lastAutoNudgeAt);

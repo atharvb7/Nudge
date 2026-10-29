@@ -3,6 +3,7 @@ import { COPY, type InputStyle, type Settings, type WordingStyle } from '@nudge/
 import { sendToBackground, type TabInfo } from '../../lib/messages';
 import { actions } from '../store';
 import { micPermissionState } from '../../lib/speech';
+import { radioKeys } from '../components/ui';
 
 /** Three quick steps, under a minute. Everything else uses smart defaults. */
 export function Onboarding({ settings, inTab, onDone }: { settings: Settings; inTab?: boolean; onDone: () => void }) {
@@ -53,7 +54,7 @@ export function Onboarding({ settings, inTab, onDone }: { settings: Settings; in
           <p className="muted">I help make starting a little easier — and rest a little lighter.</p>
           <h2>Which tab is your task?</h2>
           <p className="muted small">I’ll notice when you keep coming back to it. Totally optional.</p>
-          <div className="stack" role="radiogroup" aria-label="Task tab">
+          <div className="stack" role="radiogroup" aria-label="Task tab" onKeyDown={radioKeys(tabs.slice(0, 8).map((t) => t.id), pinned ?? tabs[0]?.id ?? -1, (v) => setPinned(v))}>
             {tabs.slice(0, 8).map((t) => (
               <button
                 key={t.id}
@@ -87,12 +88,12 @@ export function Onboarding({ settings, inTab, onDone }: { settings: Settings; in
       {step === 1 && (
         <section className="stack" aria-labelledby="ob2">
           <h1 id="ob2">How would you like me to talk?</h1>
-          <div className="choice-grid" role="radiogroup" aria-label="Wording style">
-            <button type="button" role="radio" aria-checked={wording === 'warm'} className="choice" onClick={() => setWording('warm')}>
+          <div className="choice-grid" role="radiogroup" aria-label="Wording style" onKeyDown={radioKeys<WordingStyle>(['warm', 'literal'], wording, setWording)}>
+            <button type="button" role="radio" aria-checked={wording === 'warm'} tabIndex={wording === 'warm' ? 0 : -1} className="choice" onClick={() => setWording('warm')}>
               <span style={{ fontWeight: 700 }}>Warm &amp; casual</span>
               <small>“Want to just peek at it?”</small>
             </button>
-            <button type="button" role="radio" aria-checked={wording === 'literal'} className="choice" onClick={() => setWording('literal')}>
+            <button type="button" role="radio" aria-checked={wording === 'literal'} tabIndex={wording === 'literal' ? 0 : -1} className="choice" onClick={() => setWording('literal')}>
               <span style={{ fontWeight: 700 }}>Clear &amp; literal</span>
               <small>“Open the file DBMS.pdf.”</small>
             </button>
@@ -106,12 +107,12 @@ export function Onboarding({ settings, inTab, onDone }: { settings: Settings; in
       {step === 2 && (
         <section className="stack" aria-labelledby="ob3">
           <h1 id="ob3">How do you like to answer?</h1>
-          <div className="choice-grid" role="radiogroup" aria-label="Input style">
-            <button type="button" role="radio" aria-checked={input === 'voice'} className="choice" onClick={() => void chooseVoice()}>
+          <div className="choice-grid" role="radiogroup" aria-label="Input style" onKeyDown={radioKeys<InputStyle>(['voice', 'buttons'], input, (v) => (v === 'voice' ? void chooseVoice() : setInput('buttons')))}>
+            <button type="button" role="radio" aria-checked={input === 'voice'} tabIndex={input === 'voice' ? 0 : -1} className="choice" onClick={() => void chooseVoice()}>
               <span style={{ fontWeight: 700 }}>Voice + buttons</span>
               <small>Talk when typing feels like too much</small>
             </button>
-            <button type="button" role="radio" aria-checked={input === 'buttons'} className="choice" onClick={() => setInput('buttons')}>
+            <button type="button" role="radio" aria-checked={input === 'buttons'} tabIndex={input === 'buttons' ? 0 : -1} className="choice" onClick={() => setInput('buttons')}>
               <span style={{ fontWeight: 700 }}>Buttons only</span>
               <small>Quiet, one tap at a time</small>
             </button>

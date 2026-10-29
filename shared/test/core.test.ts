@@ -390,3 +390,45 @@ describe('crisis negation and extra phrasing', () => {
     expect(detectCrisis('what’s the point of living')).toBe('concern');
   });
 });
+
+describe('persona review fixes (shared)', () => {
+  it('brain dump: tidy items, feelings become validation, an action is picked', async () => {
+    const { localBrainDump } = await import('../src');
+    const r = localBrainDump("I have the DBMS assignment due tomorrow, haven't started the OS lab report, honestly it's too much, mum keeps calling, need to email prof, and the laundry is piling up", 'warm') as ReturnType<typeof localBrainDump> & { validation?: string | null };
+    const items = r.groups.flatMap((g) => g.items);
+    expect(items).toContain('The DBMS assignment');
+    expect(items).toContain('The OS lab report');
+    expect(items).toContain('The laundry');
+    expect(items.some((i) => /too much|honestly/i.test(i))).toBe(false);
+    expect(items.some((i) => /^(have|haven't)/i.test(i))).toBe(false);
+    expect(r.pick?.item).toBe('Email prof');
+    expect(r.validation).toMatch(/a lot/);
+  });
+  it('brain dump: near-duplicates are merged', async () => {
+    const { dumpItems } = await import('../src');
+    expect(dumpItems('email prof, need to email prof, Email prof!').items).toEqual(['Email prof']);
+  });
+  it('literal energy labels have no metaphors', async () => {
+    const { energyLabel } = await import('../src');
+    expect(energyLabel(1, 'literal')).toBe('1 — Very low energy');
+    expect(energyLabel(1, 'warm')).toBe('Running on empty');
+  });
+  it('a file-like task is never "your DBMS_Assignment"', async () => {
+    const { fillTask, looksLikeFileName } = await import('../src');
+    expect(fillTask('Open {task}.', 'DBMS_Assignment', 'DBMS_Assignment', 'warm')).toBe('Open DBMS_Assignment.');
+    expect(fillTask('Open {task}.', 'your DBMS_Assignment.pdf', undefined, 'warm')).toBe('Open DBMS_Assignment.pdf.');
+    expect(looksLikeFileName('OS_Lab_Report')).toBe(true);
+    expect(looksLikeFileName('lab report')).toBe(false);
+  });
+  it('note to future-you quotes the step, not the cheering', async () => {
+    const { localOfframp } = await import('../src');
+    const r = localOfframp('DBMS assignment', ["Copy the question into your document, word for word. That's real progress."], 'warm');
+    expect(r.note_to_future_self).toContain('Copy the question into your document, word for word');
+    expect(r.note_to_future_self).not.toMatch(/real progress/);
+  });
+  it('typed feelings get a validation line', async () => {
+    const { localSequence } = await import('../src');
+    const r = localSequence({ task: '', transcript: 'ugh this assignment is killing me lol', state: 'stuck', energy: 3, history: [], top_strategies: [], action: 'start', wording_style: 'warm', explain_why: false });
+    expect(r.validation).toBeTruthy();
+  });
+});

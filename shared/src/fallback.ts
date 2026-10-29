@@ -1,4 +1,4 @@
-import { CELEBRATIONS, OPENERS, VALIDATIONS, fillTask, pick, softenCopy, findBannedWords } from './copy';
+import { CELEBRATIONS, OPENERS, VALIDATIONS, fillTask, looksLikeFeeling, pick, softenCopy, findBannedWords } from './copy';
 import { detectCrisis, safetyPayload } from './crisis';
 import { STRATEGIES, STRATEGY_BY_ID } from './strategies';
 import type {
@@ -80,6 +80,9 @@ export function rankCards(req: SequenceRequest, rand: () => number = Math.random
   return scored.sort((a, b) => b.s - a.s).map((x) => x.c);
 }
 
+/** Words that mean "this is a lot right now" → validate first, in one sentence. */
+export const OVERWHELM = /\b(overwhelm\w*|too much|can['’]?t do|can['’]?t even|so much|everything|killing me|so hard|ugh+|hate this|drowning|piling up|stressed|panic\w*)\b/i;
+
 const SMALLEST = ['just_open_it', 'one_percent', 'first_physical_action', 'write_the_title', 'read_one_paragraph', 'set_up_space'];
 
 function stepText(card: StrategyCard, i: number, style: WordingStyle): string {
@@ -122,7 +125,7 @@ export function localSequence(req: SequenceRequest, region: Region = 'IN', rand:
   let index = 0;
   let prefix = '';
 
-  if (req.action === 'next' && last && STRATEGY_BY_ID[last.strategy_id]) {
+  if (req.action === 'next' && last && STRATEGY_BY_ID[last.strategy_id] && !(req.exclude_ids ?? []).includes(last.strategy_id)) {
     const prev = STRATEGY_BY_ID[last.strategy_id];
     const usedSteps = req.history.filter((h) => h.strategy_id === prev.id).length;
     if (usedSteps < prev.steps.length && !prev.is_rest) {
@@ -145,7 +148,7 @@ export function localSequence(req: SequenceRequest, region: Region = 'IN', rand:
   if (prefix) next = prefix + next.charAt(0).toLowerCase() + next.slice(1);
   if (findBannedWords(next).length) next = softenCopy(next);
 
-  const overwhelmed = req.state === 'overwhelmed' || /\b(overwhelm|too much|can['’]?t do|so much|everything)\b/i.test(req.transcript ?? '');
+  const overwhelmed = req.state === 'overwhelmed' || OVERWHELM.test(`${req.transcript ?? ''} ${looksLikeFeeling(req.task) ? req.task : ''}`);
   return {
     mode: 'coach',
     lead: leadFor(card, req, rotation),
@@ -162,10 +165,17 @@ export function localSequence(req: SequenceRequest, region: Region = 'IN', rand:
   };
 }
 
+/** First sentence of a step, without the encouragement ("That's real progress."). */
+export function stepGist(step: string): string {
+  const first = (step || '').split(/(?<=[.!?])\s+/)[0] ?? '';
+  const g = first.replace(/[.!?]+$/, '').trim();
+  return g.length > 90 ? g.slice(0, 87).trimEnd() + '…' : g;
+}
+
 export function localOfframp(task: string, progress: string[], style: WordingStyle): OfframpResponse {
-  const t = task.trim() || 'your task';
+  const t = looksLikeFeeling(task) ? 'your task' : task.trim() || 'your task';
   const did = progress.filter(Boolean);
-  const lastStep = did[did.length - 1];
+  const lastStep = stepGist(did[did.length - 1] ?? '');
   const note =
     style === 'literal'
       ? did.length
@@ -188,29 +198,71 @@ const GROUP_RULES: Array<[string, RegExp]> = [
   ['Admin & money', /\b(pay|fees?|bill|rent|form|bank|scholarship|register|application|apply|book|ticket|documents?)\b/i],
 ];
 
+/** Fragments that are only a feeling ("honestly it's too much") — validated, not listed as tasks. */
+const FEELING_ONLY = /^(honestly\s+|and\s+|but\s+|also\s+|like\s+)*(it'?s|this is|that'?s|everything'?s|everything is|i'?m|i am|i feel|feeling|so|just|ugh|omg|idk)\b.*\b(too much|a lot|overwhelm\w*|stressed|tired|exhausted|so much|killing me|hard|awful|messy|chaos|panick\w*|anxious|scared|stuck)\b[.!?]*$|^(ugh+|argh+|omg|help|idk)[.!?]*$/i;
+const LEAD_IN = /^\s*(?:and\s+|but\s+|also\s+|plus\s+|then\s+|so\s+|um+\s+|uh+\s+|like\s+|honestly\s+|oh\s+and\s+)*(?:i\s+)?(?:still\s+)?(?:really\s+)?(?:need\s+to|have\s+to|has\s+to|gotta|got\s+to|should|must|ought\s+to|want\s+to|have|haven'?t\s+(?:even\s+)?started(?:\s+on)?|didn'?t\s+(?:even\s+)?start(?:\s+on)?|am\s+supposed\s+to|i'?m\s+supposed\s+to|to)\s+/i;
+const TRAIL = /\s+(?:(?:is|are)\s+)?(?:due(?:\s+(?:tomorrow|today|soon|on\s+\w+|by\s+\w+))?|is\s+piling\s+up|are\s+piling\s+up|piling\s+up|tomorrow|today|tonight|asap|soon|already|too|as\s+well|again|lol|haha)\s*$/i;
+const ACTION = /^(email|reply|text|call|message|write|read|finish|start|submit|pay|book|send|open|print|fill|study|revise|review|clean|wash|do|make|buy|cook|fix|apply|register|prepare|practice|practise|complete|draft|edit|plan|ask|return|upload|check|sort|tidy)\b/i;
+
+function cleanItem(raw: string): string {
+  let s = raw.trim().replace(/^[-*•\d.)\s]+/, '');
+  for (let i = 0; i < 3; i++) {
+    const before = s;
+    s = s.replace(LEAD_IN, '').replace(TRAIL, '').trim();
+    if (s === before) break;
+  }
+  s = s.replace(/[.!?,;:]+$/, '').trim();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function itemKey(s: string): string {
+  return s.toLowerCase().replace(/\b(the|a|an|my|our|this|that)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
 export function splitDump(text: string): string[] {
   return text
-    .split(/\n|[,;•]|\.\s|\balso\b|\band then\b|\bplus\b|\band\b(?=\s+(?:i|need|have|gotta|got|to|the|my)\b)/i)
-    .map((s) => s.replace(/^\s*(i\s+(need|have|gotta|got)\s+to|i\s+should|need\s+to|have\s+to|gotta|to|um+|uh+|like)\s+/i, '').trim())
-    .map((s) => s.replace(/[.!?]+$/, '').trim())
+    .split(/\n|[,;•]|\.\s|\balso\b|\band then\b|\bplus\b|\band\b(?=\s+(?:i|need|have|gotta|got|to|the|my|haven'?t|mum|mom|dad)\b)/i)
+    .map((s) => s.trim())
     .filter((s) => s.length > 2);
 }
 
-export function localBrainDump(transcript: string, style: WordingStyle, region: Region = 'IN'): BrainDumpResponse {
+/** Split, drop feeling-only fragments, tidy each item and remove near-duplicates. */
+export function dumpItems(text: string): { items: string[]; feelings: string[] } {
+  const items: string[] = [];
+  const feelings: string[] = [];
+  const seen = new Set<string>();
+  for (const frag of splitDump(text)) {
+    if (FEELING_ONLY.test(frag.trim()) || looksLikeFeeling(frag) && !ACTION.test(cleanItem(frag))) {
+      feelings.push(frag.trim());
+      continue;
+    }
+    const item = softenCopy(cleanItem(frag));
+    if (item.length < 3) continue;
+    const key = itemKey(item);
+    if ([...seen].some((k) => k === key || (k.length > 6 && (k.includes(key) || key.includes(k))))) continue;
+    seen.add(key);
+    items.push(item);
+  }
+  return { items, feelings };
+}
+
+export function localBrainDump(transcript: string, style: WordingStyle, region: Region = 'IN'): BrainDumpResponse & { validation?: string | null } {
   const level = detectCrisis(transcript);
   if (level !== 'none') {
     return { mode: 'safety', groups: [], pick: null, alternatives: [], source: 'card', safety: safetyPayload(region, level) };
   }
-  const items = Array.from(new Set(splitDump(transcript).map((s) => softenCopy(s))));
+  const { items, feelings } = dumpItems(transcript);
+  const validation = feelings.length ? (style === 'literal' ? 'You said this feels like a lot. That is understandable.' : 'That sounds like a lot to hold at once — it makes sense it feels heavy.') : null;
   const groups = new Map<string, string[]>();
   for (const it of items) {
     const label = GROUP_RULES.find(([, re]) => re.test(it))?.[0] ?? 'Other bits';
     groups.set(label, [...(groups.get(label) ?? []), it]);
   }
-  if (!items.length) return { mode: 'coach', groups: [], pick: null, alternatives: [], source: 'card', safety: null };
-  // Pick the item that sounds quickest: short + "quick" verbs score higher.
+  if (!items.length) return { mode: 'coach', groups: [], pick: null, alternatives: [], source: 'card', safety: null, validation };
+  // Pick something concrete and quick: an action verb first, quick verbs next, then the shortest.
   const quick = /\b(email|reply|text|call|pay|book|send|open|print|submit|message|form)\b/i;
-  const ranked = [...items].sort((a, b) => (quick.test(b) ? 1 : 0) - (quick.test(a) ? 1 : 0) || a.length - b.length);
+  const score = (s: string) => (ACTION.test(s) ? 2 : 0) + (quick.test(s) ? 1 : 0);
+  const ranked = [...items].sort((a, b) => score(b) - score(a) || a.length - b.length);
   const chosen = ranked[0];
   const first =
     style === 'literal'
@@ -227,6 +279,7 @@ export function localBrainDump(transcript: string, style: WordingStyle, region: 
     alternatives: ranked.slice(1, 6),
     source: 'card',
     safety: null,
+    validation,
   };
 }
 

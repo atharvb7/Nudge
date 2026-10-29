@@ -153,7 +153,7 @@ export function safetyPayload(region: Region, level: CrisisLevel = 'high'): Safe
     level === 'high'
       ? "I'm really glad you told me. You matter, and you don't have to carry this alone. Let's put the task aside — talking to someone right now could really help."
       : "That sounds really heavy, and I'm glad you said it out loud. The task can wait. Would talking to someone help right now?";
-  return { crisis: true, message, resources: CRISIS_RESOURCES[region] ?? CRISIS_RESOURCES.OTHER };
+  return { crisis: true, message, resources: CRISIS_RESOURCES[region] ?? CRISIS_RESOURCES.OTHER, level: level === 'concern' ? 'concern' : 'high' };
 }
 
 export const TRUSTED_PERSON_LINE =

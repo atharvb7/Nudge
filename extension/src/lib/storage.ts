@@ -59,6 +59,8 @@ export interface SessionState {
   lastBlockAt?: number;
   lastActiveAt?: number;
   focusedWindowId?: number | null;
+  /** last tick failure (error name + message only — never user data) */
+  lastTickError?: string | null;
 }
 
 export type PanelIntent =

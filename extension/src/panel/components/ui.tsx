@@ -1,5 +1,24 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ENERGY_LABELS, type Energy, type StepSize } from '@nudge/shared';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { energyLabel, type Energy, type StepSize, type WordingStyle } from '@nudge/shared';
+
+/**
+ * Arrow keys move between radios in a group (standard radiogroup behaviour);
+ * only the checked radio is in the Tab order.
+ */
+export function radioKeys<T>(values: T[], current: T, onChange: (v: T) => void) {
+  return (e: KeyboardEvent<HTMLElement>) => {
+    const keys: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+    let i = values.indexOf(current);
+    if (e.key in keys) i = (i + keys[e.key] + values.length) % values.length;
+    else if (e.key === 'Home') i = 0;
+    else if (e.key === 'End') i = values.length - 1;
+    else return;
+    e.preventDefault();
+    onChange(values[i]);
+    const group = e.currentTarget;
+    requestAnimationFrame(() => group.querySelectorAll<HTMLElement>('[role="radio"]')[i]?.focus());
+  };
+}
 
 export function MicIcon() {
   return (
@@ -75,13 +94,14 @@ export function Segmented<T extends string | number>({
       <span className="field-label" style={{ fontWeight: 600, fontSize: '0.95rem' }}>
         {label}
       </span>
-      <div className="row" role="radiogroup" aria-label={label}>
+      <div className="row" role="radiogroup" aria-label={label} onKeyDown={radioKeys(options.map((o) => o.value), value, onChange)}>
         {options.map((o) => (
           <button
             key={String(o.value)}
             type="button"
             role="radio"
             aria-checked={o.value === value}
+            tabIndex={o.value === value ? 0 : -1}
             className="btn soft"
             onClick={() => onChange(o.value)}
           >
@@ -93,26 +113,29 @@ export function Segmented<T extends string | number>({
   );
 }
 
-/** Energy as 1–5 "spoons". */
-export function EnergyPicker({ value, onChange }: { value: Energy; onChange: (e: Energy) => void }) {
+/** Energy as 1–5 "spoons" (warm) or plain digits (literal). */
+export function EnergyPicker({ value, onChange, style = 'warm' }: { value: Energy; onChange: (e: Energy) => void; style?: WordingStyle }) {
+  const values = [1, 2, 3, 4, 5] as Energy[];
+  const literal = style === 'literal';
   return (
     <div className="field">
       <span style={{ fontWeight: 600, fontSize: '0.95rem' }} id="energy-label">
-        Energy right now <span className="muted small">· {ENERGY_LABELS[value]}</span>
+        Energy right now <span className="muted small">· {energyLabel(value, style)}</span>
       </span>
-      <div className="energy" role="radiogroup" aria-labelledby="energy-label">
-        {([1, 2, 3, 4, 5] as Energy[]).map((n) => (
+      <div className="energy" role="radiogroup" aria-labelledby="energy-label" onKeyDown={radioKeys(values, value, onChange)}>
+        {values.map((n) => (
           <button
             key={n}
             type="button"
             role="radio"
             aria-checked={n === value}
-            aria-label={`${n} of 5 — ${ENERGY_LABELS[n]}`}
-            className={`spoon ${n <= value ? 'on' : ''}`}
+            tabIndex={n === value ? 0 : -1}
+            aria-label={literal ? energyLabel(n, 'literal') : `${n} of 5 — ${energyLabel(n, 'warm')}`}
+            className={`spoon ${n <= value ? 'on' : ''}${literal ? ' digit' : ''}`}
             onClick={() => onChange(n)}
           >
             <span className="fill" aria-hidden="true">
-              🥄
+              {literal ? n : '🥄'}
             </span>
           </button>
         ))}
@@ -195,14 +218,20 @@ export function RingTimer({
           <span style={{ fontSize: '1.6rem', color: 'var(--n-text)' }}>
             {mins}:{String(secs).padStart(2, '0')}
           </span>
+        ) : left > 0 ? (
+          <span className="sr-only">{minutesLeftText(left)}</span>
         ) : (
-          <span className="sr-only">
-            About {Math.max(1, Math.round(left / 60000))} minutes left
-          </span>
+          <span className="sr-only">Time’s up — no rush.</span>
         )}
       </div>
     </div>
   );
+}
+
+export function minutesLeftText(leftMs: number): string {
+  if (leftMs < 60_000) return 'Less than a minute left';
+  const m = Math.round(leftMs / 60_000);
+  return `About ${m} minute${m === 1 ? '' : 's'} left`;
 }
 
 export function Loading({ text }: { text: string }) {

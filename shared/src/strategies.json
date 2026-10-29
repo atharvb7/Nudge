@@ -11,7 +11,7 @@
       "If you'd like, go another 2 minutes. Or stop here and call it a win."
     ],
     "literal_version": [
-      "Start a 2-minute timer. Work on {task} until the timer ends. You may stop when it ends.",
+      "Press 'Start the 2-minute timer' below. Work on {task} until the timer ends. You may stop when it ends.",
       "Optional: start another 2-minute timer and continue {task}."
     ],
     "phrasings": [
@@ -55,7 +55,7 @@
       "Keep me open beside you. Do the next tiny piece of {task} while I keep you company."
     ],
     "literal_version": [
-      "Press 'Body double'. A calm timer will run beside you. Then open {task}.",
+      "Press 'Start body-double mode' below. A calm timer will run beside you. Then open {task}.",
       "Keep the timer running. Do one small part of {task}."
     ],
     "phrasings": [
@@ -430,7 +430,7 @@
       "Round done? Take a 2-minute stretch before deciding on another."
     ],
     "literal_version": [
-      "Start a 10-minute body-double timer and work on {task}. You may stop at any time.",
+      "Press 'Start body-double mode' below. A 10-minute timer starts. Work on {task}. You may stop at any time.",
       "When the timer ends, stand up and stretch for 2 minutes."
     ],
     "phrasings": [
@@ -496,7 +496,7 @@
       "Here's the one thing I'd start with. Want to swap it for another?"
     ],
     "literal_version": [
-      "Press 'Brain dump'. Say or type every task you are thinking about. Nudge will group them and choose one.",
+      "Press 'Open brain dump' below. Say or type every task you are thinking about. Nudge will group them and choose one.",
       "Look at the chosen task. Keep it or choose a different one."
     ],
     "phrasings": [
@@ -536,11 +536,11 @@
     "modality": "thinking",
     "size": "tiny",
     "steps": [
-      "Take a peek at what you've already done today. Every start counts, including the ones that paused.",
+      "Take a peek at what you've already done today (tap 'Show today's wins'). Every start counts, including the ones that paused.",
       "With that in mind, pick one tiny next thing, or rest. Your call."
     ],
     "literal_version": [
-      "Open your wins list. Read what you did today.",
+      "Press 'Show today's wins' below. Read what you did today.",
       "Choose one small next action for {task}, or choose to rest."
     ],
     "phrasings": [
@@ -892,7 +892,7 @@
       "Stay in the bubble and do one small piece."
     ],
     "literal_version": [
-      "Start body-double mode. Turn on the 'brown noise' or 'rain' sound. Open {task}.",
+      "Press 'Start body-double mode' below. Under 'Background sound', choose 'Brown noise (deep, soft)' or 'Rain-ish'. Open {task}.",
       "Do one small part of {task} while the sound plays."
     ],
     "phrasings": [
@@ -1131,11 +1131,11 @@
     "modality": "timer",
     "size": "tiny",
     "steps": [
-      "Start a visual timer so you can see time moving, then glance at {task} while it runs.",
+      "Start the visual timer below so you can see time moving, then glance at {task} while it runs.",
       "Watch the ring shrink while you do one small thing."
     ],
     "literal_version": [
-      "Start the visual timer. Look at {task} while it runs.",
+      "Press 'Start the visual timer' below. Look at {task} while it runs.",
       "Do one small action in {task} before the timer ends."
     ],
     "phrasings": [

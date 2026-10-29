@@ -24,15 +24,15 @@ export function softenCopy(text: string): string {
 export const BUTTON_LABELS: Record<WordingStyle, Record<ActionButton, string>> = {
   warm: {
     done: 'Done',
-    too_big: 'Too big',
+    too_big: 'Too much right now',
     smaller: 'Make it smaller',
     different: 'Different idea',
     rest: 'I need rest',
   },
   literal: {
     done: 'Done',
-    too_big: 'Too big',
-    smaller: 'Make it smaller',
+    too_big: 'Too hard right now',
+    smaller: 'Split this step',
     different: 'Different idea',
     rest: 'I need rest',
   },
@@ -40,8 +40,8 @@ export const BUTTON_LABELS: Record<WordingStyle, Record<ActionButton, string>> =
 
 export const BUTTON_HINTS: Record<ActionButton, string> = {
   done: 'I did this step',
-  too_big: 'This still feels like too much',
-  smaller: 'Split this step into something even smaller',
+  too_big: 'My energy is lower than this — go gentler',
+  smaller: 'Same idea, cut into an even smaller piece',
   different: 'Try a different kind of idea',
   rest: 'Take a break, guilt-free',
 };
@@ -184,6 +184,25 @@ export const ENERGY_LABELS: Record<number, string> = {
   5: 'Fully charged',
 };
 
+/** Clear & literal energy labels: no metaphors. */
+export const ENERGY_LABELS_LITERAL: Record<number, string> = {
+  1: '1 — Very low energy',
+  2: '2 — Low energy',
+  3: '3 — Medium energy',
+  4: '4 — Good energy',
+  5: '5 — High energy',
+};
+
+export function energyLabel(n: number, style: WordingStyle): string {
+  return (style === 'literal' ? ENERGY_LABELS_LITERAL : ENERGY_LABELS)[n] ?? '';
+}
+
+/** Looks like a file or document name ("DBMS_Assignment.pdf", "OS_Lab_Report") — never prefix it with "your". */
+export function looksLikeFileName(text: string): boolean {
+  const t = (text || '').trim();
+  return /\.[a-z0-9]{2,5}$/i.test(t) || (/[_]/.test(t) && !/\s/.test(t));
+}
+
 export function pick<T>(xs: T[], index: number): T {
   return xs[((index % xs.length) + xs.length) % xs.length];
 }
@@ -199,7 +218,10 @@ export function looksLikeFeeling(text: string): boolean {
 
 export function fillTask(text: string, task: string, taskTabTitle: string | undefined, style: WordingStyle): string {
   const concrete = (taskTabTitle || '').trim();
-  const said = looksLikeFeeling(task) ? '' : (task || '').trim();
+  let said = looksLikeFeeling(task) ? '' : (task || '').trim();
+  // the chip and the tab title are the same thing: use it once, as a name
+  if (said && concrete && said.toLowerCase() === concrete.toLowerCase()) said = concrete;
+  said = said.replace(/^your\s+(?=\S*[_.])/i, '');
   let label: string;
   if (style === 'literal') label = concrete || said || 'your task';
   else label = said || concrete || 'your task';

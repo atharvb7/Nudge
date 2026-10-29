@@ -148,7 +148,7 @@ chrome.idle.onStateChanged.addListener((state) => {
 // ───────────── the 30 s tick ─────────────
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === TICK) void serial(tick);
+  if (alarm.name === TICK) void serial(safeTick);
   if (alarm.name === 'nudge-break-end') void onBreakAlarm();
 });
 
@@ -170,6 +170,16 @@ async function windowFullscreen(): Promise<boolean> {
     return w.state === 'fullscreen';
   } catch {
     return false;
+  }
+}
+
+/** A tick must never wedge the queue: errors are noted (name only), slow work times out. */
+async function safeTick(): Promise<void> {
+  try {
+    await Promise.race([tick(), new Promise((_, reject) => setTimeout(() => reject(new Error('tick timeout')), 20_000))]);
+    await setSession({ lastTickError: null });
+  } catch (e) {
+    await setSession({ lastTickError: `${(e as Error)?.name ?? 'Error'}: ${String((e as Error)?.message ?? e).slice(0, 120)}` });
   }
 }
 

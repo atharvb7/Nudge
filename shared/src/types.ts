@@ -270,6 +270,8 @@ export interface SafetyPayload {
   crisis: true;
   message: string;
   resources: CrisisResource[];
+  /** 'concern' = hopeless/frustrated language without explicit self-harm (absent = treat as high) */
+  level?: 'high' | 'concern';
 }
 
 export interface SequenceResponse {

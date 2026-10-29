@@ -13,6 +13,7 @@ html {
 }
 body {
   margin: 0;
+  font-family: var(--n-font); /* the extension-page UA stylesheet sets body's font; override it */
   background: var(--n-bg);
   min-height: 100vh;
   line-height: 1.5;
@@ -89,6 +90,7 @@ p {
   margin-right: auto;
   background: none;
   border: 0;
+  min-height: 44px;
   padding: 6px 4px;
   cursor: pointer;
 }
@@ -424,7 +426,7 @@ textarea.input {
   gap: 8px;
 }
 .chip-btn {
-  min-height: 40px;
+  min-height: 44px;
   padding: 6px 14px;
   border-radius: 999px;
   border: 1px solid var(--n-border);
@@ -694,4 +696,19 @@ hr.soft {
   border-radius: var(--n-radius-sm);
   padding: 8px 12px;
   margin: 0;
+}
+
+/* top-bar "demo" pill is a button: keep it comfortably tappable */
+button.pill {
+  min-height: 44px;
+  padding: 6px 14px;
+}
+
+/* literal energy picker: plain digits, no spoons */
+.spoon.digit .fill {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--n-text);
+  opacity: 1;
+  filter: none;
 }

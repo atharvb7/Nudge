@@ -79,8 +79,18 @@ export function App() {
     if (!store || booted.current) return;
     booted.current = true;
     sessionRef.current = store.session;
+    // energy: today's choice, else a gentle 2 late at night, else whatever was chosen last
     if (store.energyToday?.day === dayKey()) setEnergyState(store.energyToday.energy);
-    if (store.breakState) setScreen('resting');
+    else if (new Date().getHours() >= 22 || new Date().getHours() < 5) setEnergyState(2);
+    else if (store.energyToday) setEnergyState(store.energyToday.energy);
+    const br = store.breakState;
+    const staleBreak = !!br && (Date.now() - (br.startedAt + br.plannedMin * 60_000) > 2 * 3_600_000 || dayKey(br.startedAt) !== dayKey());
+    if (staleBreak) {
+      // a break from long ago is just… over. Welcome back, zero guilt.
+      void mutate('breakState', () => null);
+      void chrome.alarms.clear('nudge-break-end');
+      setScreen('welcome');
+    } else if (br) setScreen('resting');
     else if (store.session && shouldWelcomeBack(store.session)) setScreen('welcome');
   }, [store]);
 
@@ -103,30 +113,36 @@ export function App() {
   }, []);
 
   const sequence = useCallback(
-    async (action: SequenceAction, opts: { transcript?: string; state?: SequenceState; exclude?: string[]; energy?: Energy } = {}) => {
+    async (action: SequenceAction, opts: { transcript?: string; state?: SequenceState; exclude?: string[]; energy?: Energy; avoidText?: string } = {}) => {
       if (!store) return;
       const s = sessionRef.current;
       if (!s) return;
       const st = opts.state ?? seqState;
       setLoadingText(action === 'smaller' ? 'Making it smaller…' : action === 'different' ? 'Finding a different idea…' : 'Finding a tiny step…');
       setScreen('loading');
-      const r = await requestSequence(
-        {
-          task: s.task,
-          task_tab_title: s.taskTabTitle,
-          state: st,
-          energy: opts.energy ?? s.energy,
-          history: historyFor(s),
-          transcript: opts.transcript,
-          top_strategies: thompsonScores(STRATEGIES, store.stats).slice(0, 12),
-          exclude_ids: opts.exclude,
-          action,
-          wording_style: store.settings.wordingStyle,
-          explain_why: store.settings.explainWhy,
-          recent_phrasings: recent.current.slice(-6),
-        },
-        store.settings,
-      );
+      const ask = (act: SequenceAction, exclude?: string[]) =>
+        requestSequence(
+          {
+            task: s.task,
+            task_tab_title: s.taskTabTitle,
+            state: st,
+            energy: opts.energy ?? s.energy,
+            history: historyFor(s),
+            transcript: opts.transcript,
+            top_strategies: thompsonScores(STRATEGIES, store.stats).slice(0, 12),
+            exclude_ids: exclude,
+            action: act,
+            wording_style: store.settings.wordingStyle,
+            explain_why: store.settings.explainWhy,
+            recent_phrasings: recent.current.slice(-6),
+          },
+          store.settings,
+        );
+      let r = await ask(action, opts.exclude);
+      // never hand back the exact step someone just got stuck on
+      if (opts.avoidText && r.mode !== 'safety' && r.next_step.trim() === opts.avoidText.trim()) {
+        r = await ask('different', [...(opts.exclude ?? []), r.strategy_id]);
+      }
       if (r.mode === 'safety' && r.safety) {
         // The helper noticed something the on-device check missed. The words that
         // started this session must not be kept: undo the session and its win.
@@ -161,28 +177,36 @@ export function App() {
   }, [persistSession]);
 
   const begin = useCallback(
-    async (taskIn: string, transcript?: string, state: SequenceState = seqState) => {
+    async (taskIn: string, transcript?: string, state: SequenceState = seqState, energyIn: Energy = energy) => {
       if (!store) return;
       const said = `${taskIn} ${transcript ?? ''}`;
       const safe = localSafety(said, store.settings.region);
       if (safe) return showSafety(safe);
+      // "this assignment is killing me" is a feeling, not a task name: send it as what you said
+      if (looksLikeFeeling(taskIn)) {
+        transcript = [taskIn.trim(), transcript].filter(Boolean).join('. ');
+        taskIn = '';
+      }
       let task = taskIn.trim();
+      // the pinned tab's title already goes along as the concrete name
+      const tabTitle = store.settings.taskTab?.title?.trim() ?? '';
+      if (task && tabTitle && task.toLowerCase() === tabTitle.toLowerCase()) task = '';
       if (!task && transcript && !looksLikeFeeling(transcript) && transcript.split(/\s+/).length <= 8) task = transcript.trim();
       const cur = sessionRef.current;
       const reuse = cur && !cur.endedAt && Date.now() - cur.lastActiveAt < 3 * 3_600_000 && (!task || task === cur.task);
       if (!reuse) {
         await closeSession('drifted');
-        const fresh = startSession(task, energy, store.settings.taskTab?.title || undefined);
+        const fresh = startSession(task, energyIn, store.settings.taskTab?.title || undefined);
         await persistSession(fresh);
         recent.current = [];
         const winId = await actions.addWin('started', `Started ${task || store.settings.taskTab?.title || 'something hard'}`);
         justStarted.current = { sessionId: fresh.id, winId };
-      } else if (cur && cur.energy !== energy) {
-        await persistSession({ ...cur, energy });
+      } else if (cur && cur.energy !== energyIn) {
+        await persistSession({ ...cur, energy: energyIn });
       }
       void sendToBackground({ kind: 'newSession' });
       setSeqState(state);
-      await sequence('start', { transcript, state, energy });
+      await sequence('start', { transcript, state, energy: energyIn });
     },
     [store, seqState, energy, sequence, showSafety, closeSession, persistSession],
   );
@@ -193,11 +217,17 @@ export function App() {
       setScreen('home');
       return;
     }
-    // resume from the last completed step; never comment on the stall
+    // resume from the last completed step; never comment on the stall, and
+    // don't offer the very idea that just stalled again
+    const dropped = s.steps.slice(s.lastCompletedIndex + 1);
     const r = resumeFromLastCompleted(s);
     await persistSession(r);
     setSeqState('restuck');
-    await sequence(r.lastCompletedIndex >= 0 ? 'next' : 'start', { state: 'restuck' });
+    await sequence(r.lastCompletedIndex >= 0 ? 'next' : 'start', {
+      state: 'restuck',
+      exclude: Array.from(new Set(dropped.map((d) => d.strategy_id).filter(Boolean))),
+      avoidText: dropped[dropped.length - 1]?.step,
+    });
   }, [persistSession, sequence]);
 
   const doOfframp = useCallback(async () => {
@@ -238,9 +268,9 @@ export function App() {
           setScreen('celebrate');
           return;
         case 'too_big': {
+          // lower energy for this session only — today's energy on the dashboard stays yours to set
           const lowered = lowerEnergy(marked);
           await persistSession(lowered);
-          setEnergy(lowered.energy);
           await sequence('too_big', { energy: lowered.energy });
           return;
         }
@@ -269,13 +299,19 @@ export function App() {
     if (p) showSafety(p);
   }, [store, showSafety]);
 
-  usePanelIntent((intent: PanelIntent) => {
+  const pendingIntent = useRef<PanelIntent | null>(null);
+  const handleIntent = (intent: PanelIntent) => {
     switch (intent.screen) {
-      case 'stuck':
-        setSeqState(intent.state === 'restuck' ? 'restuck' : intent.state);
-        if (intent.state === 'depleted' && energy > 2) setEnergy(2);
-        setScreen('home');
+      case 'stuck': {
+        // "Help me start" from the page: start right away with the pinned task /
+        // open session at the remembered energy — no second tap needed
+        const st: SequenceState = intent.state === 'restuck' ? 'restuck' : intent.state;
+        const e = (intent.state === 'depleted' ? Math.min(energy, 2) : energy) as Energy;
+        if (e !== energy) setEnergyState(e);
+        setSeqState(st);
+        void begin('', undefined, st, e);
         break;
+      }
       case 'break':
         setScreen('rest');
         break;
@@ -294,6 +330,20 @@ export function App() {
       case 'checkin':
         setScreen('home');
         break;
+    }
+  };
+  usePanelIntent((intent: PanelIntent) => {
+    if (!store || !store.settings.onboarded) {
+      pendingIntent.current = intent; // handled once the panel is ready
+      return;
+    }
+    handleIntent(intent);
+  });
+  useEffect(() => {
+    if (store?.settings.onboarded && pendingIntent.current) {
+      const i = pendingIntent.current;
+      pendingIntent.current = null;
+      handleIntent(i);
     }
   });
 
