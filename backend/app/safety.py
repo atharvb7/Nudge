@@ -26,6 +26,26 @@ _EXPLICIT_RE = [re.compile(p, re.I) for p in P.HIGH]
 _HOPELESS_RE = [re.compile(p, re.I) for p in P.CONCERN]
 _NEGATABLE = re.compile(P.NEGATABLE, re.I)
 _NEGATION_BEFORE = re.compile(P.NEGATION_BEFORE, re.I)
+_SELF = re.compile(P.CONCEPT_SELF, re.I)
+_DEATH = re.compile(P.CONCEPT_DEATH, re.I)
+_INTENT = re.compile(P.CONCEPT_INTENT, re.I)
+_CONCEPT_EXCLUDE = re.compile(P.CONCEPT_EXCLUDE, re.I)
+_SENTENCE_SPLIT = re.compile(r"[.!?;\n]+|,\s+(?:but|and|so)\s+", re.I)
+
+
+def _concept_hit(text: str) -> bool:
+    """First person + death/ending concept + intent/despair in one sentence."""
+    for sent in _SENTENCE_SPLIT.split(text):
+        if _CONCEPT_EXCLUDE.search(sent):
+            continue
+        d = _DEATH.search(sent)
+        if not d or not _SELF.search(sent) or not _INTENT.search(sent):
+            continue
+        # "i dont want to die" / "im not suicidal": negated death concept is reassurance
+        if re.match(r"(?:die|dying|dead|suicid)", d.group(0), re.I) and _NEGATION_BEFORE.search(sent[: d.start()]):
+            continue
+        return True
+    return False
 
 
 def _normalise(text: str) -> str:
@@ -35,6 +55,7 @@ def _normalise(text: str) -> str:
     t = re.sub(r"\s+", " ", t).strip()
     for rx in _IDIOM_RE:
         t = rx.sub(" ", t)
+    t = re.sub(r"\b\w+\b", lambda m: P.LEMMAS.get(m.group(0).lower(), m.group(0)), t)
     return re.sub(r"\s+", " ", t).strip()
 
 
@@ -109,6 +130,8 @@ def classify(text: str) -> str | None:
     if _hit(_EXPLICIT_RE, t, allow_negation=True):
         return "explicit"
     if _hit(_HOPELESS_RE, t, allow_negation=False):
+        return "hopeless"
+    if _concept_hit(t):
         return "hopeless"
     if _semantic_hit(t):
         return "hopeless"

@@ -24,6 +24,7 @@ class Card:
     why_it_works: str
     tags: tuple[str, ...] = field(default_factory=tuple)
     is_rest: bool = False
+    task_kinds: tuple[str, ...] = ("any",)
 
     def document(self) -> str:
         """Text used for embedding / keyword retrieval."""
@@ -52,6 +53,7 @@ class Card:
             "why_it_works": self.why_it_works,
             "tags": list(self.tags),
             "is_rest": self.is_rest,
+            "task_kinds": list(self.task_kinds),
         }
 
 
@@ -71,6 +73,7 @@ def _parse(raw: dict) -> Card:
         why_it_works=raw.get("why_it_works", ""),
         tags=tuple(raw.get("tags") or []),
         is_rest=bool(raw.get("is_rest", False)),
+        task_kinds=tuple(raw.get("task_kinds") or ["any"]),
     )
 
 

@@ -20,9 +20,10 @@ def test_tidy_limits_exclamations():
 def test_task_label():
     assert task_label("DBMS assignment", "DBMS_Assignment.pdf", literal=True) == "the file DBMS_Assignment.pdf"
     assert task_label("DBMS assignment", None, literal=False) == "your DBMS assignment"
-    assert task_label("email prof", None, literal=False) == "“email prof”"
+    assert task_label("email prof", None, literal=False) == "your message to prof"
     assert task_label("", None, literal=False) == "your task"
-    assert task_label("my essay", None, literal=False) == "my essay"
+    assert task_label("my essay", None, literal=False) == "your essay"  # addressed to the student
+    assert task_label("", "Google Docs - Untitled document", literal=False) == "your task"
 
 
 def test_split_items_handles_fillers():

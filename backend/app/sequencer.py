@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -67,7 +68,20 @@ async def _guarded_llm(
     Raises llm.LLMUnavailable or ValueError when nothing usable came back.
     """
     started = time.monotonic()
-    data, source = await llm.chat_json(messages)
+    settings = get_settings()
+    budget = min(settings.llm_budget_s, settings.llm_timeout)
+
+    async def within_budget(msgs: list[dict], prefer: str | None = None) -> tuple[dict, str]:
+        remaining = budget - (time.monotonic() - started)
+        if remaining <= 0.2:
+            raise llm.LLMUnavailable("budget spent")
+        try:
+            return await asyncio.wait_for(llm.chat_json(msgs, prefer=prefer), timeout=remaining)
+        except asyncio.TimeoutError:
+            raise llm.LLMUnavailable("over budget") from None
+
+    data, source = await within_budget(messages)
+    first_call = time.monotonic() - started
 
     def scan(d: dict, finder) -> list[str]:
         words: list[str] = []
@@ -81,8 +95,8 @@ async def _guarded_llm(
         return scan(d, copy_guard.find_idioms) if literal else []
 
     words, vague = scan(data, copy_guard.find_banned), idioms(data)
-    # Only retry while there's time left: the extension gives up at ~25 s and uses its own cards.
-    if (words or vague) and time.monotonic() - started < get_settings().llm_timeout * 0.6:
+    # Only retry if a second call of the same length still fits the budget.
+    if (words or vague) and (time.monotonic() - started) + first_call * 1.1 + 0.3 < budget:
         reminder = (
             copy_guard.REMINDER.format(words=", ".join(sorted(set(words))))
             if words
@@ -93,7 +107,7 @@ async def _guarded_llm(
             {"role": "user", "content": reminder},
         ]
         try:
-            data, source = await llm.chat_json(retry, prefer=source)
+            data, source = await within_budget(retry, prefer=source)
         except llm.LLMUnavailable:
             pass
     if scan(data, copy_guard.find_banned):

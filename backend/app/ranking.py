@@ -12,7 +12,8 @@ from dataclasses import dataclass
 
 from .models import SequenceRequest
 from . import retrieval
-from .strategies import Card, load_cards
+from .strategies import Card, cards_by_id, load_cards
+from .taskkind import card_fits, clean_tab_title, task_kind
 
 DEFAULT_PERSONAL = 0.5
 
@@ -52,8 +53,24 @@ def _seed(req: SequenceRequest) -> int:
     return int(hashlib.sha1(key.encode()).hexdigest()[:8], 16)
 
 
+def declined_rest(req: SequenceRequest) -> bool:
+    """A rest card was already offered this session and the student asked for a step anyway."""
+    by_id = cards_by_id()
+    return any(h.strategy_id in by_id and by_id[h.strategy_id].is_rest for h in req.history)
+
+
 def wants_rest(req: SequenceRequest) -> bool:
-    return req.energy <= 1 or (req.energy <= 2 and req.action == "too_big")
+    """Rest-first when depleted or running on empty — but never twice over the student's choice."""
+    if declined_rest(req):
+        return False
+    if req.energy <= 1 or (req.energy <= 2 and req.action == "too_big"):
+        return True
+    return req.state == "depleted" and req.action == "start"
+
+
+def kind_of(req: SequenceRequest) -> str:
+    kind = task_kind(req.task)
+    return kind if kind != "unknown" else task_kind(clean_tab_title(req.task_tab_title))
 
 
 def rank(req: SequenceRequest, limit: int = 5) -> list[Ranked]:
@@ -69,12 +86,16 @@ def rank(req: SequenceRequest, limit: int = 5) -> list[Ranked]:
         history_excluded = {h.strategy_id for h in req.history if h.strategy_id}
     recently_used = {h.strategy_id for h in req.history if h.strategy_id}
     rest_mode = wants_rest(req)
+    kind = kind_of(req)
 
     # relax 0: every filter; 1: allow cards used earlier this session;
-    # 2: allow explicitly excluded cards; 3: allow "small" cards at low energy.
+    # 2: allow explicitly excluded cards; 3: allow "small" cards at low energy;
+    # 4: allow cards written for other kinds of task.
     def candidates(relax: int) -> list[Ranked]:
         out: list[Ranked] = []
         for c in cards:
+            if relax < 4 and not card_fits(c.task_kinds, kind):
+                continue
             if relax < 1 and c.id in history_excluded:
                 continue
             if relax < 2 and c.id in explicit_excluded:
@@ -97,7 +118,7 @@ def rank(req: SequenceRequest, limit: int = 5) -> list[Ranked]:
         return out
 
     ranked: list[Ranked] = []
-    for relax in range(4):
+    for relax in range(5):
         ranked = candidates(relax)
         if ranked:
             break

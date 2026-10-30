@@ -36,6 +36,10 @@ class Settings:
     ollama_url: str = field(default_factory=lambda: os.getenv("OLLAMA_URL", "http://localhost:11434"))
     ollama_model: str = field(default_factory=lambda: os.getenv("OLLAMA_MODEL", "llama3.1:8b"))
     llm_timeout: float = field(default_factory=lambda: float(os.getenv("NUDGE_LLM_TIMEOUT", "20")))
+    # Total LLM time per request (first try + any copy-rule retry). Well under the
+    # extension's client timeout, so a slow model never means a long spinner:
+    # past this, the pre-written card is served instantly instead.
+    llm_budget_s: float = field(default_factory=lambda: float(os.getenv("NUDGE_LLM_BUDGET_S", "8")))
 
     # Cloud fallback: off unless explicitly allowed AND a key is present.
     allow_cloud: bool = field(default_factory=lambda: _flag("NUDGE_ALLOW_CLOUD", "0"))

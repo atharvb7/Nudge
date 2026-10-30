@@ -50,6 +50,12 @@ IDIOMS: list[str] = [
     r"\bgiving\s+(?:my\s+)?(?:old\s+)?(?:notes|books|textbooks|clothes)\s+away\s+to\b",
     r"\bwont\s+need\s+(?:the|my)\s+\w+\s+after\b",
     r"\b(?:patient|patients|character|case\s+study|subject|the\s+drug|chapter)\b[^.!?]{0,40}\boverdos\w*",
+    r"\bjump(?:ing)?\s+off\s+(?:the\s+|a\s+|this\s+)?(?:call|meeting|zoom|meet|stream|discord|server|chat|class)\b",
+    r"\bdisappear\w*\s+from\s+(?:this|the|that|my)\s+(?:group|chat|class|app|internet|social\w*|instagram|feed|meeting)\b",
+    r"\bdy(?:e|ed|ing)\s+(?:my|her|his|their)\s+hair\b",
+    r"\bsleep\s+forever\s+(?:after|when|once|till|until|this\s+weekend)\b",
+    r"\b(?:the\s+)?(?:character|protagonist|narrator|hero|heroine|villain)\b[^.!?]{0,40}\b(?:want\s+to\s+die|wants\s+to\s+die|dies|died|kills?\s+(?:him|her|them)self)\b",
+    r"\b(?:vanish|disappear)\w*\s+from\s+(?:this|the|that|my)?\s*(?:group|chat|class|app|internet|social\w*|instagram|insta|feed|meeting|whatsapp)\b",
 ]
 
 # Tier 1 — explicit self-harm / suicidal language, methods, plans, finality.
@@ -132,6 +138,11 @@ HIGH: list[str] = [
     r"\bmight\s+as\s+well\s+(?:be\s+dead|die)\b",
     r"\bwant\s+my\s+life\s+to\s+(?:be\s+over|end|stop)\b",
     r"\b(?:want|wanna|wish)\s+(?:to\s+)?(?:just\s+)?(?:not|stop)\s+(?:exist|existing|be\s+alive|living)\b",
+    r"\btonight\s+is\s+(?:it|the\s+night)\b",
+    r"\b(?:jump|step|walk|throw\s+myself)\w*\s+in\s+front\s+of\s+(?:a|the)\s+(?:train|bus|car|truck)\b",
+    r"\b(?:no|dont\s+have\s+(?:the|any))\s+will\s+to\s+live\b",
+    r"\b(?:not\s+going\s+to|wont|not\s+gonna)\s+make\s+it\s+(?:through\s+)?(?:tonight|the\s+night|till\s+morning)\b",
+    r"\bwant\s+to\s+stop\s+breathing\b",
 ]
 
 # Tier 2 — hopelessness, burden, wanting it to stop, ambiguous "end it".
@@ -188,7 +199,7 @@ CONCERN: list[str] = [
     r"\bthink(?:ing)?\s+about\s+not\s+being\s+(?:here|alive|around)\b",
     r"\bthink(?:ing)?\s+about\s+(?:death|dying)\b",
     r"\bthis\s+is\s+goodbye\b",
-    r"\bgoodbye\s+every(?:one|body)\b",
+    r"\bgoodbye\s+every(?:one|body)\b(?![^.!?]{0,30}\b(?:see\s+you|tomorrow|tmrw|later|next|good\s*night|gn|good\s+luck|have\s+a|thanks\s+for)\b)",
     r"\bwont\s+need\s+(?:it|this|them|anything)\s+(?:after\s+(?:tonight|today)|any\s*more)\b",
     # Hindi / Hinglish
     r"\bjeena\s+bekar\b",
@@ -199,6 +210,17 @@ CONCERN: list[str] = [
     r"\blife\s+(?:is|feels|seems)\s+(?:so\s+|completely\s+|totally\s+)?(?:pointless|meaningless|hopeless|empty|worthless)\b",
     r"\b(?:im|i\s+am|i\s+feel\s+like)\s+(?:so\s+|such\s+|just\s+|completely\s+|totally\s+|really\s+|nothing\s+but\s+)?(?:a\s+)?(?:worthless|useless|failure|waste\s+of\s+space|disappointment|pathetic|mistake)\b",
     r"\b(?:want|wanna)\s+(?:to\s+)?(?:just\s+)?not\s+(?:be\s+here|wake\s+up)\b",
+    r"\b(?:im|i\s+am)\s+(?:just\s+|finally\s+)?ending\s+it\b",
+    r"\bno\s+reason\s+(?:for\s+me\s+)?to\s+(?:be\s+here|live|exist|keep\s+going|go\s+on)\b",
+    r"\bdont\s+think\s+i\s+can\s+(?:keep\s+going|go\s+on)\b",
+    r"\b(?:nahi|nhi)\s+jee\s+(?:sakta|sakti|paunga|paungi)\b",
+    r"\bwish\s+i\s+(?:was|were)\s+never\s+born\b",
+    r"\bbetter\s+off\s+if\s+i\s+(?:wasnt|werent|was\s+never|were\s+never)\s+(?:born|here|alive|around)\b",
+    r"\blife\s+has\s+no\s+(?:meaning|point|purpose)\b",
+    r"\bwant\s+(?:the\s+pain|it|everything|it\s+all)\s+to\s+(?:just\s+)?(?:stop|end)\b",
+    r"\bpoint\s+(?:in|of)\s+me\s+(?:being\s+alive|living|existing|being\s+here)\b",
+    r"\bwant\s+it\s+(?:all\s+)?over\b",
+    r"\bjust\s+want\s+out\b",
 ]
 
 # "I'm not suicidal" / "I don't want to die" mean the opposite. Only these
@@ -206,3 +228,41 @@ CONCERN: list[str] = [
 # kill/hurt/harm phrases: care comes first.
 NEGATABLE = r"^(?:su[ie]?c[iu]?d|want|wanna|wnat)"
 NEGATION_BEFORE = r"\b(?:not|never|no\s+longer|dont|doesnt|didnt|wont|cant|am\s+not|im\s+not)\s+(?:\w+\s+){0,2}$"
+
+# Concept co-occurrence (generalises beyond fixed phrasings). A sentence that has
+# all three — first person + a death/ending/non-existence concept + wanting,
+# intent or despair — is a CONCERN (the gentle screen with "I'm safe" escape).
+CONCEPT_SELF = r"\b(?:i|im|ive|ill|id|me|my|myself|mujhe|main|mera|meri)\b"
+CONCEPT_DEATH = (
+    r"\b(?:die|dying|(?:be|being|was|were|am|im|rather\s+be)\s+dead|my\s+death|about\s+death|death\s+wish|suicid\w*|alive"
+    r"|(?:not|stop|to\s+not|didnt|never)\s+exist|(?:of|stop|keep|quit)\s+existing|existence|overdos\w*|pills|noose|rope|bridge"
+    r"|jump(?:ing)?\s+off|hit\s+by\s+a\s+(?:bus|car|train|truck)|(?:sleep|asleep)\s+forever|never\s+wake|not\s+wake"
+    r"|not\s+(?:be\s+)?around|gone\s+forever|left\s+forever|disappear\w*|vanish\w*|end(?:ing)?\s+it|end\s+things"
+    r"|(?:keep|stop|continue|go\s+on)\s+living|living\s+like\s+this|let\s+me\s+off|without\s+me|handle\s+life|do\s+life"
+    r"|funeral|stop\s+breathing|in\s+front\s+of\s+(?:a|the)\s+(?:train|bus|car|truck)|(?:be|being|was|were|better\s+off)\s+gone|mar(?:na|ne|\s+jana)|jeen[ae]|jee\s+(?:sakta|sakti))\b"
+)
+CONCEPT_INTENT = (
+    r"\b(?:want|wanna|wish|hope|plan|planning|thinking|think|ready|going\s+to|gonna|rather|should|deserve|cant|cannot|feel\s+like"
+    r"|dont|why|maybe|better|would\s+be|no\s+point|tired|nahi|chahta|chahti)\b"
+)
+# hyperbole that would otherwise trip the concept rule
+CONCEPT_EXCLUDE = (
+    r"\b(?:ill|i\s+will|id|i\s+would|gonna|going\s+to)\s+(?:literally\s+|actually\s+)?die\s+(?:if|without|of|from|laughing|when)\b"
+    r"|\bdying\s+for\s+(?:a|some|coffee|food|sleep)\b"
+)
+
+# Word forms reduced to a base form before matching (after idioms are removed),
+# so "part of me wants to die", "stopped existing", "exhausted of being alive"
+# match the same patterns as their base forms.
+LEMMAS: dict[str, str] = {
+    "wants": "want", "wanted": "want", "wanting": "want",
+    "wishes": "wish", "wished": "wish", "wishing": "wish",
+    "hopes": "hope", "hoped": "hope", "hoping": "hope",
+    "dies": "die", "died": "die",
+    "stops": "stop", "stopped": "stop", "stopping": "stop",
+    "ends": "end", "ended": "end",
+    "plans": "plan", "planned": "plan",
+    "deserves": "deserve", "deserved": "deserve",
+    "exhausted": "tired", "drained": "tired",
+    "imagine": "think", "imagining": "think", "imagined": "think", "thought": "think",
+}

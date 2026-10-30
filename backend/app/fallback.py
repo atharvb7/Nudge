@@ -12,8 +12,10 @@ import re
 from dataclasses import dataclass
 
 from .models import BUTTONS, BrainDumpGroup, BrainDumpPick, BrainDumpRequest, SequenceRequest, SequenceResponse
-from .ranking import rank, wants_rest
+from .ranking import kind_of, rank, wants_rest
+from .safety import classify
 from .strategies import Card, cards_by_id
+from .taskkind import card_fits, clean_tab_title, noun_phrase, object_in, task_kind
 
 # ----------------------------------------------------------------- wording ---
 
@@ -39,32 +41,57 @@ def looks_like_feeling(text: str) -> bool:
     return bool(t) and (len(t) > 70 or len(t.split()) > 10 or bool(_FEELING_RE.search(t)))
 
 
-def task_label(req_task: str, tab_title: str | None, literal: bool) -> str:
-    task = re.sub(r"[{}]", "", (req_task or "")).strip().rstrip(".")
-    tab_title = re.sub(r"[{}]", "", tab_title or "")
-    if looks_like_feeling(task):
+MAX_LABEL_WORDS = 8
+
+
+def sanitize_task(task: str | None) -> str:
+    """The student's words are only ever used as a task *name* when they clearly are one.
+
+    Never echo back: anything the crisis check flags (even at the gentle level),
+    feelings ("this is killing me"), or long rambles (> 8 words).
+    """
+    t = re.sub(r"[{}]", "", task or "").strip().rstrip(".!?")
+    if not t or classify(t):
+        return ""
+    if looks_like_feeling(t) or len(t.split()) > MAX_LABEL_WORDS:
+        # keep only the task hiding inside ("ugh I can't start my essay" → "my essay")
+        obj = object_in(t)
+        return obj if obj and len(obj.split()) <= 4 else ""
+    return t
+
+
+def task_label(req_task: str, tab_title: str | None, literal: bool, kind: str | None = None) -> str:
+    task = sanitize_task(req_task)
+    title = clean_tab_title(tab_title)
+    if title and task and task.lower() != re.sub(r"[{}]", "", req_task or "").strip().rstrip(".!?").lower():
+        task = ""  # the task was dug out of a feeling; the pinned tab's exact name is clearer
+    kind = kind or (task_kind(task) if task else task_kind(title))
+    if task and title and task.lower() == title.lower():
         task = ""
-    title = (tab_title or "").strip()
     if literal:
+        if task and kind in ("message", "chore", "admin"):
+            return noun_phrase(task, kind)
         if title:
             return f"the file {title}" if _FILE_RE.search(title) else title
-        if task:
-            return f"the file {task}" if _FILE_RE.search(task) else f"“{task}”"
-        return "your task"
+        return noun_phrase(task, kind) if task else "your task"
     if task:
-        low = task.lower()
-        if task == title or "_" in task or _FILE_RE.search(task) or low.startswith(_DETERMINERS):
-            return task
-        if low.split()[0] in _VERBS:
-            return f"“{task}”"
-        return f"your {task}"
-    if title:
-        return title
-    return "your task"
+        return noun_phrase(task, kind)
+    return title or "your task"
+
+
+_ARTICLE_BEFORE_TASK = re.compile(r"\b(?:the|a|an)\s+((?:finished|whole|first|next|actual)\s+)?\{task\}", re.I)
+_LABEL_DET = re.compile(r"^(your|the|my|this|that)\s+(.+)$", re.I)
 
 
 def fill(text: str, label: str) -> str:
+    m = _LABEL_DET.match(label)
+    if m:
+        # "the finished {task}" + "your essay" → "your finished essay", never "the finished your essay"
+        det, rest = m.group(1), m.group(2)
+        text = _ARTICLE_BEFORE_TASK.sub(lambda a: f"{det} {a.group(1) or ''}{rest}", text)
     out = text.replace("{task}", label)
+    out = re.sub(r"\b(your|the)\s+\1\b", r"\1", out, flags=re.I)
+    out = re.sub(r"\s+([,.!?])", r"\1", out)
     # Capitalise sentence starts that began with the placeholder.
     out = re.sub(r"(^|[.!?]\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), out)
     return out
@@ -85,7 +112,7 @@ def _pick(options: list[str], avoid: list[str], salt: str) -> str:
 
 _OVERWHELM_RE = re.compile(
     r"overwhelm|too much|so much|too many|everything|can'?t think|drowning|panic|anxious|anxiety|stressed|"
-    r"freaking out|spiral|too big|no idea where|all at once|so many|killing me|so hard|\\bugh+\\b|can'?t even|"
+    r"freaking out|spiral|too big|no idea where|all at once|so many|killing me|so hard|\bu+g+h+\b|can'?t even|"
     r"hate this|losing it|done with this",
     re.I,
 )
@@ -155,8 +182,9 @@ def plan(req: SequenceRequest) -> Plan:
         if last_step and _shrink(last_step, literal=False) is not None:
             return Plan(current, 0, shrink_of=last_step)
         used = {h.strategy_id for h in req.history}
+        kind = kind_of(req)
         for cid in _SHRINK_TO:
-            if cid in by_id and cid not in used and cid not in req.exclude_ids:
+            if cid in by_id and cid not in used and cid not in req.exclude_ids and card_fits(by_id[cid].task_kinds, kind):
                 return Plan(by_id[cid], 0)
         return Plan(by_id.get("just_open_it", current), 0)
 
@@ -167,6 +195,13 @@ def plan(req: SequenceRequest) -> Plan:
 _CLAUSE_SPLIT = re.compile(r"(?:,\s*then\s+|\s+then\s+|\s+and\s+|,\s+|:\s+|\s+[—–-]\s+|;\s+|\.\s+)", re.I)
 
 
+_NOT_AN_ACTION = re.compile(
+    r"^(?:what|which|how|who|when|where|why|here|before|if|quick|mini|tiny|let'?s|you'?re|it'?s|this|that'?s|"
+    r"sometimes|choose|pick your|finish this|start from|change the goal|turn|a\s|the\s|one\s|small)\b",
+    re.I,
+)
+
+
 def _shrink(step: str, literal: bool) -> str | None:
     """Turn a step into a smaller one by keeping only its first action."""
     s = step.strip()
@@ -174,6 +209,8 @@ def _shrink(step: str, literal: bool) -> str | None:
         if s.startswith(prefix):
             return None  # already shrunk once: switch card instead
     first = _CLAUSE_SPLIT.split(s, maxsplit=1)[0].strip().rstrip(".!?")
+    if "?" in s.split(".")[0] or '"' in first or "“" in first or _NOT_AN_ACTION.match(first):
+        return None  # a question or a set-up clause, not an action: switch card instead
     words = first.split()
     if len(words) < 3 or first.lower() == s.lower().rstrip(".!?"):
         return None
@@ -188,7 +225,7 @@ def _shrink(step: str, literal: bool) -> str | None:
 def card_reply(req: SequenceRequest, p: Plan | None = None) -> SequenceResponse:
     p = p or plan(req)
     literal = req.wording_style == "literal"
-    label = task_label(req.task, req.task_tab_title, literal)
+    label = task_label(req.task, req.task_tab_title, literal, kind_of(req))
     card = p.card
     idx = min(p.step_index, len(card.steps) - 1)
 
@@ -209,6 +246,12 @@ def card_reply(req: SequenceRequest, p: Plan | None = None) -> SequenceResponse:
         lead = _pick([fill(ph, label) for ph in card.phrasings], req.recent_phrasings, salt) or None
 
     rest = card.is_rest or wants_rest(req)
+    if wants_rest(req) and not card.is_rest and req.action == "start":
+        lead = (
+            "Option: rest first. Or do this step:"
+            if literal
+            else "You've been going a while — resting is a real option. Or, if you'd like one tiny thing:"
+        )
     return SequenceResponse(
         mode="coach",
         lead=lead,
@@ -292,12 +335,23 @@ _TAIL_RE = re.compile(
 def _is_feeling_only(item: str) -> bool:
     """'Honestly it's too much' is a feeling to validate, not a task to pick."""
     low = item.lower()
-    has_action = low.split()[0] in _VERBS or any(re.search(rf"\\b{re.escape(w)}", low) for b in _BUCKETS for w in b[1])
+    has_action = low.split()[0] in _VERBS or any(re.search(rf"\b{re.escape(w)}", low) for b in _BUCKETS for w in b[1])
     return looks_like_feeling(item) and not has_action
 
 
+_LIST_MARKER = re.compile(r"(?:^|\s)(?:\(?\d{1,2}[.)]|[-*•·▪◦]|#\d+)\s+")
+_FILLER_WORDS = re.compile(
+    r"\b(?:idk|i\s+dunno|dunno|i\s+don'?t\s+know|lol|lmao|haha+|whatever|etc|or\s+something|and\s+stuff|and\s+things|"
+    r"stuff\s+like\s+that|i\s+guess|honestly|basically|literally|tbh|ngl)\b",
+    re.I,
+)
+_ONLY_FILLER = re.compile(r"^(?:stuff|things|something|everything|anything|nothing|it|that|this|yeah|yes|no|ok|okay)$", re.I)
+
+
 def split_items(transcript: str) -> list[str]:
-    parts = _SPLIT_RE.split(transcript or "")
+    text = _LIST_MARKER.sub("\n", " " + (transcript or ""))
+    text = _FILLER_WORDS.sub(" ", text)
+    parts = _SPLIT_RE.split(text)
     items: list[str] = []
     seen: set[str] = set()
     for raw in parts:
@@ -310,7 +364,8 @@ def split_items(transcript: str) -> list[str]:
         while prev != t:
             prev = t
             t = _TAIL_RE.sub("", _LEAD_RE.sub("", t)).strip(" .,!?-")
-        if len(t.split()) < 1 or len(t) < 3 or _is_feeling_only(t):
+        t = re.sub(r"\s+", " ", t).strip(" .,!?-")
+        if len(t.split()) < 1 or len(t) < 3 or _ONLY_FILLER.match(t) or _is_feeling_only(t) or classify(t):
             continue
         key = t.lower()
         if key in seen:
@@ -328,7 +383,7 @@ def bucket_of(item: str) -> str:
     return "Other"
 
 
-def ease(item: str) -> float:
+def ease(item: str, prefer_uni: bool = False) -> float:
     low = item.lower()
     score = len(item.split())
     first = low.split()[0] if low.split() else ""
@@ -338,7 +393,33 @@ def ease(item: str) -> float:
         score += 3  # "Mum keeps calling" isn't something you can start
     if any(re.search(rf"\b{w}", low) for w in _HEAVY):
         score += 4
+    if prefer_uni and bucket_of(item) == "Home & body":
+        score += 8  # "quickest" shouldn't mean a chore when uni work is waiting
     return score
+
+
+def first_step_for(item: str, literal: bool) -> str:
+    """A first step that fits what the item actually is."""
+    kind = task_kind(item)
+    first_word = item.split()[0] if item.split() else ""
+    plain = item if first_word.isupper() and len(first_word) > 1 else item[:1].lower() + item[1:]
+    name = noun_phrase(plain, kind) or plain
+    if kind == "message":
+        m = re.match(r"^(?:email|e-mail|mail|text|message|whatsapp|dm|ping|reply\s+to|call|ring|phone)\s+(?:back\s+)?(.+?)(?:\s+back)?$", plain, re.I)
+        who = m.group(1) if m else "them"
+        if re.match(r"^(?:call|ring|phone)\b", item, re.I):
+            return (f"Write three words you want to say to {who}." if literal
+                    else f"Jot three words you want to say to {who}. That's the whole step.")
+        return (f"Open a new message to {who}. Type only the greeting." if literal
+                else f"Open a new message to {who} and type just the greeting.")
+    if kind == "chore":
+        return (f"Do one item for {name}. Then you may stop." if literal
+                else f"Pick up just one item for {name}. One counts.")
+    if kind == "admin":
+        return (f"Open the website or form for {name}." if literal
+                else f"Just open the page or form for {name}. That's the whole step.")
+    return (f"Open the file for {name}. Do nothing else yet." if literal
+            else f"Just open {name}. That's the whole first step.")
 
 
 def braindump_reply(req: BrainDumpRequest) -> tuple[list[BrainDumpGroup], BrainDumpPick | None, list[str]]:
@@ -350,13 +431,13 @@ def braindump_reply(req: BrainDumpRequest) -> tuple[list[BrainDumpGroup], BrainD
         groups.setdefault(bucket_of(it), []).append(it)
     order = [b for b, _ in _BUCKETS] + ["Other"]
     group_list = [BrainDumpGroup(label=g, items=groups[g]) for g in order if g in groups]
-    pick_item = min(items, key=ease)
+    prefer_uni = req.energy > 2 and any(bucket_of(i) == "Uni" for i in items)
+    pick_item = min(items, key=lambda i: ease(i, prefer_uni))
     literal = req.wording_style == "literal"
     if literal:
         why = "This item looks like the quickest one to start."
-        first = f"Write down the first action for “{pick_item}”. Then do that action."
     else:
         why = "It looks like the quickest one to get moving on. You can swap it any time."
-        first = f"Just open whatever you'd need for “{pick_item}”. That's the whole first step."
+    first = first_step_for(pick_item, literal)
     alternatives = [i for i in items if i != pick_item]
     return group_list, BrainDumpPick(item=pick_item, why=why, first_step=first), alternatives
