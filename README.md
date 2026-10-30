@@ -17,7 +17,7 @@ You are never lazy. Nudge lowers the wall to starting, stays with you through th
 
 ## Quick start (about 5 minutes)
 
-**Fastest:** `./scripts/run-local.sh` (macOS/Linux) or `scripts\\run-local.ps1` (Windows) does all of the below. See [`docs/TRY_IT.md`](docs/TRY_IT.md) for a guided tour of every feature.
+**Fastest:** `./scripts/run-local.sh` (macOS/Linux) or `scripts\run-local.ps1` (Windows) does all of the below. See [`docs/TRY_IT.md`](docs/TRY_IT.md) for a guided tour of every feature.
 
 ```bash
 # 1. JS workspaces (shared + extension + dashboard)
