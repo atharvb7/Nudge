@@ -122,3 +122,24 @@ Request types: see `BridgeRequest` in `shared/src/bridge.ts`.
 ## Storage keys (`chrome.storage.local`)
 
 See `StorageShape` in `shared/src/types.ts`.
+
+## Task kinds (shared rule — implemented identically in `shared/src/fallback.ts` and `backend/app/`)
+
+Every strategy card has `task_kinds` (`doc | reading | study | code | admin | message | chore | any`).
+The task text (or, if empty, the cleaned tab title) is classified by the **first** matching rule:
+
+| kind | words (case-insensitive, whole word) |
+|---|---|
+| message | email, e-mail, mail, text, message, reply, call, ring, whatsapp, dm, ping, phone |
+| chore | laundry, clean, dishes, wash, tidy, cook, groceries, shopping, trash, vacuum, room, shower, iron, fold, bed |
+| admin | pay, fee(s), bill, form, bank, apply, application, register, book, appointment, renew, passport, scholarship |
+| code | code, coding, bug, debug, program, script, leetcode, github, function, compile |
+| reading | read, reading, chapter, article, textbook, pdf (only if no doc word) |
+| study | study, revise, revision, exam, quiz, test, flashcards, lecture, practice |
+| doc | essay, write, writing, report, assignment, draft, thesis, presentation, slides, doc, document, resume, cv, letter |
+
+No match → `unknown`. A card is allowed when `any ∈ task_kinds` or `kind ∈ task_kinds`; for `unknown`, every card is allowed except ones whose kinds are only `message`/`chore`.
+
+**Tab-title cleanup** before use: strip trailing ` - Google Docs|Sheets|Slides`, ` - Microsoft Word|Excel|PowerPoint`, ` - Word`, ` | Notion`, ` - Overleaf.*`, ` - YouTube`, ` - Google Drive`, ` — Mozilla Firefox`, leading `(\d+) `; a remaining `Untitled document|Untitled spreadsheet|Untitled presentation|New Tab` becomes empty (→ "your document").
+
+**Safety first:** text that trips the crisis check is never used as a task, never stored, and never sent on.

@@ -19,6 +19,8 @@ export type SequenceAction = 'start' | 'too_big' | 'smaller' | 'different' | 'ne
 
 export type SiteCategory = 'work' | 'escape' | 'neutral';
 
+export type TaskKind = 'doc' | 'reading' | 'study' | 'code' | 'admin' | 'message' | 'chore' | 'any';
+
 export interface StrategyCard {
   id: string;
   name: string;
@@ -32,6 +34,8 @@ export interface StrategyCard {
   why_it_works: string;
   tags: string[];
   is_rest?: boolean;
+  /** which kinds of task this card fits: doc | reading | study | code | admin | message | chore | any */
+  task_kinds: TaskKind[];
 }
 
 // ---------- Sensing ----------

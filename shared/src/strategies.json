@@ -2,7 +2,10 @@
   {
     "id": "two_minute_start",
     "name": "2-minute start",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "timer",
     "size": "tiny",
@@ -19,12 +22,23 @@
       "Tiny deal: two minutes on {task}. That's all this asks."
     ],
     "why_it_works": "Promising only two minutes makes the starting wall much lower, and once you're moving, carrying on usually costs less than starting.",
-    "tags": ["start", "timer", "classic", "2-minute"]
+    "tags": [
+      "start",
+      "timer",
+      "classic",
+      "2-minute"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "ugly_first_draft",
     "name": "Ugly first draft",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "writing",
     "size": "tiny",
@@ -41,12 +55,23 @@
       "Let's make a gloriously ugly first sentence for {task}."
     ],
     "why_it_works": "Perfectionism often hides inside task paralysis; giving yourself permission to write badly removes the pressure that keeps the page blank.",
-    "tags": ["writing", "perfectionism", "draft"]
+    "tags": [
+      "writing",
+      "perfectionism",
+      "draft"
+    ],
+    "task_kinds": [
+      "doc"
+    ]
   },
   {
     "id": "body_doubling",
     "name": "Body doubling",
-    "for_state": ["stuck", "restuck", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "restuck",
+      "overwhelmed"
+    ],
     "min_energy": 2,
     "modality": "social",
     "size": "tiny",
@@ -63,12 +88,22 @@
       "How about we do {task} side by side for a bit?"
     ],
     "why_it_works": "Having a calm presence nearby lowers the activation energy to start; many ADHD folks find working 'with someone' much easier than working alone.",
-    "tags": ["company", "body-double", "presence"]
+    "tags": [
+      "company",
+      "body-double",
+      "presence"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "interest_hook",
     "name": "Interest hook",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "thinking",
     "size": "tiny",
@@ -85,12 +120,25 @@
       "Curiosity can be a side entrance. What's one interesting corner of {task}?"
     ],
     "why_it_works": "Interest is a strong fuel for ADHD brains; entering through the interesting part borrows that energy for the rest.",
-    "tags": ["interest", "dopamine", "gamify"]
+    "tags": [
+      "interest",
+      "dopamine",
+      "gamify"
+    ],
+    "task_kinds": [
+      "doc",
+      "reading",
+      "study",
+      "code"
+    ]
   },
   {
     "id": "beat_the_timer",
     "name": "Race the timer",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 3,
     "modality": "timer",
     "size": "small",
@@ -107,12 +155,25 @@
       "Ninety-second sprint on {task}, just for fun?"
     ],
     "why_it_works": "A tiny game adds urgency and novelty, two things that help an interest-based nervous system get moving.",
-    "tags": ["gamify", "game", "novelty", "timer"]
+    "tags": [
+      "gamify",
+      "game",
+      "novelty",
+      "timer"
+    ],
+    "task_kinds": [
+      "doc",
+      "study",
+      "code"
+    ]
   },
   {
     "id": "implementation_intention",
     "name": "When-then plan",
-    "for_state": ["stuck", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "overwhelmed"
+    ],
     "min_energy": 1,
     "modality": "thinking",
     "size": "tiny",
@@ -129,12 +190,22 @@
       "Want to pick a 'when' for {task} instead of a 'now'?"
     ],
     "why_it_works": "If-then plans hand the decision to a cue in your environment, so starting needs less willpower in the moment.",
-    "tags": ["plan", "cue", "implementation intention"]
+    "tags": [
+      "plan",
+      "cue",
+      "implementation intention"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "change_location",
     "name": "Change location",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "movement",
     "size": "small",
@@ -151,12 +222,26 @@
       "Change of scenery for {task}?"
     ],
     "why_it_works": "A new place breaks the loop of cues tied to scrolling and stuck feelings, and the small novelty helps attention switch on.",
-    "tags": ["location", "environment", "novelty"]
+    "tags": [
+      "location",
+      "environment",
+      "novelty"
+    ],
+    "task_kinds": [
+      "doc",
+      "reading",
+      "study",
+      "code",
+      "admin"
+    ]
   },
   {
     "id": "reframe_question",
     "name": "Turn it into a question",
-    "for_state": ["stuck", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "overwhelmed"
+    ],
     "min_energy": 2,
     "modality": "thinking",
     "size": "tiny",
@@ -173,12 +258,25 @@
       "Let's get curious: what's {task} actually asking?"
     ],
     "why_it_works": "Questions invite curiosity instead of pressure, and curiosity is easier to start from than obligation.",
-    "tags": ["reframe", "curiosity", "question"]
+    "tags": [
+      "reframe",
+      "curiosity",
+      "question"
+    ],
+    "task_kinds": [
+      "doc",
+      "reading",
+      "study",
+      "code"
+    ]
   },
   {
     "id": "music_cue",
     "name": "One-song start",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "sound",
     "size": "tiny",
@@ -195,12 +293,25 @@
       "Let a song be your timer for {task}."
     ],
     "why_it_works": "Music gives time a shape you can feel, and a familiar song can act as a start signal for your brain.",
-    "tags": ["music", "sound", "cue", "time"]
+    "tags": [
+      "music",
+      "sound",
+      "cue",
+      "time"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "just_open_it",
     "name": "Just open it",
-    "for_state": ["stuck", "restuck", "depleted", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "restuck",
+      "depleted",
+      "overwhelmed"
+    ],
     "min_energy": 1,
     "modality": "screen",
     "size": "tiny",
@@ -217,12 +328,28 @@
       "What if you only opened {task} and called that a win?"
     ],
     "why_it_works": "Opening the thing is often the hardest part; making it the entire goal turns an impossible wall into one click.",
-    "tags": ["open", "smallest", "classic"]
+    "tags": [
+      "open",
+      "smallest",
+      "classic"
+    ],
+    "task_kinds": [
+      "doc",
+      "reading",
+      "study",
+      "code",
+      "admin",
+      "message"
+    ]
   },
   {
     "id": "transition_ritual",
     "name": "Transition ritual",
-    "for_state": ["stuck", "restuck", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "restuck",
+      "overwhelmed"
+    ],
     "min_energy": 1,
     "modality": "body",
     "size": "tiny",
@@ -239,12 +366,22 @@
       "A tiny reset before {task}?"
     ],
     "why_it_works": "Switching tasks is extra hard with ADHD and autism; a small, repeatable ritual tells your brain 'we're changing gears now'.",
-    "tags": ["transition", "ritual", "switching"]
+    "tags": [
+      "transition",
+      "ritual",
+      "switching"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "permission_to_rest",
     "name": "Permission to rest",
-    "for_state": ["depleted", "overwhelmed"],
+    "for_state": [
+      "depleted",
+      "overwhelmed"
+    ],
     "min_energy": 1,
     "modality": "rest",
     "size": "tiny",
@@ -262,12 +399,23 @@
       "Rest is part of the work. {task} can wait for you."
     ],
     "why_it_works": "Pushing on an empty tank makes the next start harder; real rest refills the energy that starting needs.",
-    "tags": ["rest", "permission", "break"]
+    "tags": [
+      "rest",
+      "permission",
+      "break"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "sensory_reset",
     "name": "Sensory reset",
-    "for_state": ["overwhelmed", "depleted", "stuck"],
+    "for_state": [
+      "overwhelmed",
+      "depleted",
+      "stuck"
+    ],
     "min_energy": 1,
     "modality": "sensory",
     "size": "tiny",
@@ -284,12 +432,23 @@
       "A quiet minute first?"
     ],
     "why_it_works": "Sensory overload uses up the same energy that starting needs; lowering input gives your nervous system room to settle.",
-    "tags": ["sensory", "autism", "overload", "calm"]
+    "tags": [
+      "sensory",
+      "autism",
+      "overload",
+      "calm"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "first_physical_action",
     "name": "Name the first move",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 1,
     "modality": "thinking",
     "size": "tiny",
@@ -306,12 +465,22 @@
       "Let's find the first move your body makes for {task}."
     ],
     "why_it_works": "Big tasks feel abstract; a concrete physical action skips the planning loop and gets your body moving first.",
-    "tags": ["concrete", "physical", "smallest"]
+    "tags": [
+      "concrete",
+      "physical",
+      "smallest"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "write_the_title",
     "name": "Write the title",
-    "for_state": ["stuck", "depleted"],
+    "for_state": [
+      "stuck",
+      "depleted"
+    ],
     "min_energy": 1,
     "modality": "writing",
     "size": "tiny",
@@ -328,12 +497,22 @@
       "Tiniest writing step: a title for {task}."
     ],
     "why_it_works": "A blank page is intimidating; a title makes the document 'already started', which takes the edge off.",
-    "tags": ["writing", "blank page", "smallest"]
+    "tags": [
+      "writing",
+      "blank page",
+      "smallest"
+    ],
+    "task_kinds": [
+      "doc"
+    ]
   },
   {
     "id": "copy_the_prompt",
     "name": "Copy the question",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 1,
     "modality": "writing",
     "size": "tiny",
@@ -350,12 +529,24 @@
       "Copy-paste counts as starting {task}."
     ],
     "why_it_works": "Copying is low-effort and puts the task in front of you, so you're working before your brain notices.",
-    "tags": ["writing", "assignment", "smallest"]
+    "tags": [
+      "writing",
+      "assignment",
+      "smallest"
+    ],
+    "task_kinds": [
+      "doc",
+      "study",
+      "code"
+    ]
   },
   {
     "id": "messy_bullet_plan",
     "name": "Three messy bullets",
-    "for_state": ["stuck", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "overwhelmed"
+    ],
     "min_energy": 2,
     "modality": "writing",
     "size": "small",
@@ -372,12 +563,24 @@
       "Three bullets, zero pressure?"
     ],
     "why_it_works": "Working memory is limited; putting the parts on paper frees your brain to pick one instead of juggling all of them.",
-    "tags": ["plan", "working memory", "list"]
+    "tags": [
+      "plan",
+      "working memory",
+      "list"
+    ],
+    "task_kinds": [
+      "doc",
+      "study",
+      "code"
+    ]
   },
   {
     "id": "say_it_to_me",
     "name": "Explain it to me",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "voice",
     "size": "tiny",
@@ -394,12 +597,22 @@
       "Talking it out can unlock it. What's {task} about?"
     ],
     "why_it_works": "Explaining out loud organizes your thoughts and often reveals the first step on its own.",
-    "tags": ["voice", "explain", "rubber duck"]
+    "tags": [
+      "voice",
+      "explain",
+      "rubber duck"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "solo_window",
     "name": "One window, one thing",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "screen",
     "size": "tiny",
@@ -416,12 +629,26 @@
       "Let's clear the stage so {task} is the only thing on it."
     ],
     "why_it_works": "Fewer visible options means fewer pulls on attention, without the stress of closing anything.",
-    "tags": ["distraction", "screen", "environment"]
+    "tags": [
+      "distraction",
+      "screen",
+      "environment"
+    ],
+    "task_kinds": [
+      "doc",
+      "reading",
+      "study",
+      "code",
+      "admin"
+    ]
   },
   {
     "id": "focus_round_10",
     "name": "Gentle 10-minute round",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 3,
     "modality": "timer",
     "size": "small",
@@ -438,12 +665,22 @@
       "Ten calm minutes with {task}, exit door always open?"
     ],
     "why_it_works": "Short, bounded work rounds with a built-in exit feel safe to start, and the visible timer helps with time blindness.",
-    "tags": ["timer", "pomodoro", "focus"]
+    "tags": [
+      "timer",
+      "pomodoro",
+      "focus"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "pair_with_treat",
     "name": "Pair it with a treat",
-    "for_state": ["stuck", "depleted"],
+    "for_state": [
+      "stuck",
+      "depleted"
+    ],
     "min_energy": 2,
     "modality": "body",
     "size": "tiny",
@@ -460,12 +697,23 @@
       "Let's make {task} a bit more pleasant first."
     ],
     "why_it_works": "Pairing a pleasant thing with a hard thing (temptation bundling) lends the hard thing a bit of reward.",
-    "tags": ["reward", "dopamine", "treat"]
+    "tags": [
+      "reward",
+      "dopamine",
+      "treat"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "stand_and_stretch",
     "name": "Stand, stretch, sit",
-    "for_state": ["stuck", "depleted", "restuck"],
+    "for_state": [
+      "stuck",
+      "depleted",
+      "restuck"
+    ],
     "min_energy": 1,
     "modality": "movement",
     "size": "tiny",
@@ -482,12 +730,22 @@
       "A quick stretch might shake loose a start."
     ],
     "why_it_works": "A small burst of movement nudges alertness and gives your brain a clean 'reset' before starting.",
-    "tags": ["movement", "body", "alertness"]
+    "tags": [
+      "movement",
+      "body",
+      "alertness"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "brain_dump",
     "name": "Brain dump",
-    "for_state": ["overwhelmed", "stuck"],
+    "for_state": [
+      "overwhelmed",
+      "stuck"
+    ],
     "min_energy": 1,
     "modality": "voice",
     "size": "small",
@@ -504,12 +762,24 @@
       "Your head sounds full. Want to unload it here?"
     ],
     "why_it_works": "When everything feels urgent, nothing gets started; getting it all out lets you choose one thing with less noise.",
-    "tags": ["overwhelm", "brain dump", "prioritize", "voice"]
+    "tags": [
+      "overwhelm",
+      "brain dump",
+      "prioritize",
+      "voice"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "easiest_part_first",
     "name": "Easiest part first",
-    "for_state": ["stuck", "restuck", "depleted"],
+    "for_state": [
+      "stuck",
+      "restuck",
+      "depleted"
+    ],
     "min_energy": 1,
     "modality": "thinking",
     "size": "tiny",
@@ -526,12 +796,22 @@
       "Let's grab the easiest piece of {task}."
     ],
     "why_it_works": "An early easy win builds momentum and proves to your brain that this task is doable.",
-    "tags": ["momentum", "easy", "win"]
+    "tags": [
+      "momentum",
+      "easy",
+      "win"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "look_back_wins",
     "name": "Look at what you've done",
-    "for_state": ["restuck", "depleted"],
+    "for_state": [
+      "restuck",
+      "depleted"
+    ],
     "min_energy": 1,
     "modality": "thinking",
     "size": "tiny",
@@ -548,12 +828,22 @@
       "Quick look back before looking forward?"
     ],
     "why_it_works": "Seeing evidence of effort counters the 'I've done nothing' feeling that often makes restarting harder.",
-    "tags": ["wins", "self-compassion", "momentum"]
+    "tags": [
+      "wins",
+      "self-compassion",
+      "momentum"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "note_to_future_self",
     "name": "Note to future-you",
-    "for_state": ["depleted", "restuck"],
+    "for_state": [
+      "depleted",
+      "restuck"
+    ],
     "min_energy": 1,
     "modality": "writing",
     "size": "tiny",
@@ -570,12 +860,22 @@
       "Let's make tomorrow's start easier."
     ],
     "why_it_works": "Restarting is easiest when you know exactly where to pick up; a one-line note saves future-you the 'where was I?' search.",
-    "tags": ["future self", "handoff", "rest"]
+    "tags": [
+      "future self",
+      "handoff",
+      "rest"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "phone_away",
     "name": "Phone in another room",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "environment",
     "size": "tiny",
@@ -592,12 +892,23 @@
       "A little distance from the phone, just for now?"
     ],
     "why_it_works": "Even a silent phone nearby pulls on attention; a little distance removes one competing choice.",
-    "tags": ["phone", "distraction", "environment"]
+    "tags": [
+      "phone",
+      "distraction",
+      "environment"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "read_one_paragraph",
     "name": "Read one paragraph",
-    "for_state": ["stuck", "restuck", "depleted"],
+    "for_state": [
+      "stuck",
+      "restuck",
+      "depleted"
+    ],
     "min_energy": 1,
     "modality": "reading",
     "size": "tiny",
@@ -614,12 +925,23 @@
       "Let's just read a little of {task}."
     ],
     "why_it_works": "A clearly defined, tiny reading goal has a visible finish line, which makes it easier to begin.",
-    "tags": ["reading", "smallest", "study"]
+    "tags": [
+      "reading",
+      "smallest",
+      "study"
+    ],
+    "task_kinds": [
+      "reading",
+      "study"
+    ]
   },
   {
     "id": "highlight_one",
     "name": "Highlight one line",
-    "for_state": ["stuck", "depleted"],
+    "for_state": [
+      "stuck",
+      "depleted"
+    ],
     "min_energy": 1,
     "modality": "reading",
     "size": "tiny",
@@ -636,12 +958,23 @@
       "Want to just mark one sentence?"
     ],
     "why_it_works": "Highlighting is active but low-stakes, so it switches your brain into 'working' mode gently.",
-    "tags": ["reading", "study", "active"]
+    "tags": [
+      "reading",
+      "study",
+      "active"
+    ],
+    "task_kinds": [
+      "reading",
+      "study"
+    ]
   },
   {
     "id": "empty_headings",
     "name": "Empty headings",
-    "for_state": ["stuck", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "overwhelmed"
+    ],
     "min_energy": 2,
     "modality": "writing",
     "size": "tiny",
@@ -658,12 +991,22 @@
       "Headings only, no pressure to fill them."
     ],
     "why_it_works": "A scaffold turns one big task into small labelled boxes, which are far easier to start than a blank page.",
-    "tags": ["structure", "writing", "scaffold"]
+    "tags": [
+      "structure",
+      "writing",
+      "scaffold"
+    ],
+    "task_kinds": [
+      "doc"
+    ]
   },
   {
     "id": "two_questions",
     "name": "Two questions",
-    "for_state": ["stuck", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "overwhelmed"
+    ],
     "min_energy": 2,
     "modality": "writing",
     "size": "tiny",
@@ -680,12 +1023,24 @@
       "Confusion is useful. Want to write it down?"
     ],
     "why_it_works": "Unclear tasks are hard to start; naming what's unclear turns fog into something you can act on.",
-    "tags": ["clarity", "questions", "study"]
+    "tags": [
+      "clarity",
+      "questions",
+      "study"
+    ],
+    "task_kinds": [
+      "doc",
+      "study",
+      "code"
+    ]
   },
   {
     "id": "worked_example",
     "name": "Peek at an example",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "reading",
     "size": "small",
@@ -702,12 +1057,24 @@
       "Examples can be a map. Peek at one?"
     ],
     "why_it_works": "Examples reduce the uncertainty about 'how do I even begin', which is often what freezes a start.",
-    "tags": ["example", "clarity", "study"]
+    "tags": [
+      "example",
+      "clarity",
+      "study"
+    ],
+    "task_kinds": [
+      "doc",
+      "study",
+      "code"
+    ]
   },
   {
     "id": "ask_someone",
     "name": "Draft a question to someone",
-    "for_state": ["stuck", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "overwhelmed"
+    ],
     "min_energy": 2,
     "modality": "social",
     "size": "small",
@@ -724,12 +1091,25 @@
       "Sometimes one question to someone unlocks the whole thing."
     ],
     "why_it_works": "Reaching out breaks isolation, and writing a question clarifies what you actually need.",
-    "tags": ["social", "help", "clarity"]
+    "tags": [
+      "social",
+      "help",
+      "clarity"
+    ],
+    "task_kinds": [
+      "doc",
+      "study",
+      "code",
+      "admin"
+    ]
   },
   {
     "id": "water_first",
     "name": "Water first",
-    "for_state": ["depleted", "stuck"],
+    "for_state": [
+      "depleted",
+      "stuck"
+    ],
     "min_energy": 1,
     "modality": "body",
     "size": "tiny",
@@ -746,12 +1126,22 @@
       "A water break first might help."
     ],
     "why_it_works": "Even mild dehydration can make focus and mood harder; it's one of the easiest things to fix.",
-    "tags": ["body", "water", "care"]
+    "tags": [
+      "body",
+      "water",
+      "care"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "body_check",
     "name": "Body check-in",
-    "for_state": ["depleted", "overwhelmed"],
+    "for_state": [
+      "depleted",
+      "overwhelmed"
+    ],
     "min_energy": 1,
     "modality": "body",
     "size": "tiny",
@@ -768,12 +1158,23 @@
       "How's your body doing right now?"
     ],
     "why_it_works": "Unmet body needs quietly drain executive function; meeting one often frees up more energy than pushing harder.",
-    "tags": ["body", "interoception", "care"]
+    "tags": [
+      "body",
+      "interoception",
+      "care"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "stopping_point",
     "name": "Pick your stopping point",
-    "for_state": ["stuck", "restuck", "depleted"],
+    "for_state": [
+      "stuck",
+      "restuck",
+      "depleted"
+    ],
     "min_energy": 2,
     "modality": "thinking",
     "size": "tiny",
@@ -790,12 +1191,22 @@
       "Let's give {task} a finish line you choose."
     ],
     "why_it_works": "Tasks with no clear end feel endless; a chosen stopping point makes starting feel safe.",
-    "tags": ["boundary", "exit", "safety"]
+    "tags": [
+      "boundary",
+      "exit",
+      "safety"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "paper_switch",
     "name": "Switch to paper",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "writing",
     "size": "tiny",
@@ -812,12 +1223,22 @@
       "Paper sometimes feels less scary than a screen."
     ],
     "why_it_works": "A different medium is a small novelty, and paper has no tabs pulling you away.",
-    "tags": ["novelty", "paper", "screen break"]
+    "tags": [
+      "novelty",
+      "paper",
+      "screen break"
+    ],
+    "task_kinds": [
+      "doc"
+    ]
   },
   {
     "id": "voice_draft",
     "name": "Say the first draft",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "voice",
     "size": "tiny",
@@ -834,12 +1255,22 @@
       "What would you say about {task} if nobody was grading it?"
     ],
     "why_it_works": "Speaking skips the blank-page freeze; ideas that come out by voice are easier to tidy than to invent.",
-    "tags": ["voice", "writing", "draft"]
+    "tags": [
+      "voice",
+      "writing",
+      "draft"
+    ],
+    "task_kinds": [
+      "doc"
+    ]
   },
   {
     "id": "countdown_launch",
     "name": "5-4-3-2-1 launch",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "body",
     "size": "tiny",
@@ -856,12 +1287,26 @@
       "Countdown start?"
     ],
     "why_it_works": "A countdown interrupts overthinking and gives a clear 'go' moment.",
-    "tags": ["launch", "countdown", "momentum"]
+    "tags": [
+      "launch",
+      "countdown",
+      "momentum"
+    ],
+    "task_kinds": [
+      "doc",
+      "reading",
+      "study",
+      "code",
+      "admin"
+    ]
   },
   {
     "id": "tiny_side_win",
     "name": "Tiny side win",
-    "for_state": ["stuck", "depleted"],
+    "for_state": [
+      "stuck",
+      "depleted"
+    ],
     "min_energy": 2,
     "modality": "movement",
     "size": "tiny",
@@ -878,12 +1323,23 @@
       "Want to start with something tiny and easy?"
     ],
     "why_it_works": "A small finished action gives a little reward and momentum you can carry into the bigger task.",
-    "tags": ["momentum", "win", "warm-up"]
+    "tags": [
+      "momentum",
+      "win",
+      "warm-up"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "sound_bubble",
     "name": "Sound bubble",
-    "for_state": ["stuck", "restuck", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "restuck",
+      "overwhelmed"
+    ],
     "min_energy": 1,
     "modality": "sound",
     "size": "tiny",
@@ -900,12 +1356,22 @@
       "Want a cosy sound bubble for {task}?"
     ],
     "why_it_works": "Steady background noise can mask distracting sounds and give an under-stimulated brain just enough input.",
-    "tags": ["sound", "noise", "sensory"]
+    "tags": [
+      "sound",
+      "noise",
+      "sensory"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "start_routine",
     "name": "Same start routine",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "ritual",
     "size": "tiny",
@@ -922,12 +1388,22 @@
       "Familiar steps can make {task} feel familiar too."
     ],
     "why_it_works": "Predictable routines reduce the number of decisions needed to begin, which helps both ADHD and autistic brains.",
-    "tags": ["routine", "predictable", "autism"]
+    "tags": [
+      "routine",
+      "predictable",
+      "autism"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "deep_pressure",
     "name": "Grounding pressure",
-    "for_state": ["overwhelmed", "depleted"],
+    "for_state": [
+      "overwhelmed",
+      "depleted"
+    ],
     "min_energy": 1,
     "modality": "sensory",
     "size": "tiny",
@@ -944,12 +1420,23 @@
       "Let's settle your body before anything else."
     ],
     "why_it_works": "Deep pressure is calming for many autistic and ADHD nervous systems and can ease overwhelm quickly.",
-    "tags": ["sensory", "grounding", "autism", "calm"]
+    "tags": [
+      "sensory",
+      "grounding",
+      "autism",
+      "calm"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "exact_order",
     "name": "Write the exact order",
-    "for_state": ["overwhelmed", "stuck"],
+    "for_state": [
+      "overwhelmed",
+      "stuck"
+    ],
     "min_energy": 2,
     "modality": "writing",
     "size": "small",
@@ -966,12 +1453,24 @@
       "Let's take the guesswork out of {task}."
     ],
     "why_it_works": "Uncertainty is exhausting; a concrete order removes surprises and the decisions that come with them.",
-    "tags": ["predictable", "plan", "autism", "literal"]
+    "tags": [
+      "predictable",
+      "plan",
+      "autism",
+      "literal"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "one_percent",
     "name": "Aim for 1%",
-    "for_state": ["stuck", "depleted", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "depleted",
+      "overwhelmed"
+    ],
     "min_energy": 1,
     "modality": "thinking",
     "size": "tiny",
@@ -988,12 +1487,22 @@
       "Let's shrink the goal until it's easy."
     ],
     "why_it_works": "A smaller goal shrinks the fear that blocks starting; momentum does the rest more often than you'd expect.",
-    "tags": ["shrink", "smallest", "goal"]
+    "tags": [
+      "shrink",
+      "smallest",
+      "goal"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "rubric_checkbox",
     "name": "First checkbox",
-    "for_state": ["stuck", "overwhelmed"],
+    "for_state": [
+      "stuck",
+      "overwhelmed"
+    ],
     "min_energy": 2,
     "modality": "reading",
     "size": "tiny",
@@ -1010,12 +1519,25 @@
       "Let's find the first box to tick."
     ],
     "why_it_works": "Checklists externalize what's needed and give a satisfying sense of progress with each tick.",
-    "tags": ["checklist", "clarity", "assignment"]
+    "tags": [
+      "checklist",
+      "clarity",
+      "assignment"
+    ],
+    "task_kinds": [
+      "doc",
+      "study",
+      "code"
+    ]
   },
   {
     "id": "walk_reset",
     "name": "Short walk",
-    "for_state": ["depleted", "overwhelmed", "restuck"],
+    "for_state": [
+      "depleted",
+      "overwhelmed",
+      "restuck"
+    ],
     "min_energy": 1,
     "modality": "movement",
     "size": "small",
@@ -1033,12 +1555,24 @@
       "A few minutes of moving could reset things."
     ],
     "why_it_works": "Light movement can lift mood and alertness and gives your mind a break from the stuck loop.",
-    "tags": ["movement", "walk", "reset", "rest"]
+    "tags": [
+      "movement",
+      "walk",
+      "reset",
+      "rest"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "kind_words",
     "name": "Kind words first",
-    "for_state": ["overwhelmed", "depleted", "restuck"],
+    "for_state": [
+      "overwhelmed",
+      "depleted",
+      "restuck"
+    ],
     "min_energy": 1,
     "modality": "thinking",
     "size": "tiny",
@@ -1055,12 +1589,22 @@
       "Before anything else: you're doing okay."
     ],
     "why_it_works": "Self-criticism makes avoidance stronger; self-compassion lowers the threat so starting feels possible again.",
-    "tags": ["self-compassion", "shame", "kindness"]
+    "tags": [
+      "self-compassion",
+      "shame",
+      "kindness"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "novelty_swap",
     "name": "Make it new",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "screen",
     "size": "tiny",
@@ -1077,12 +1621,26 @@
       "A little novelty might wake things up."
     ],
     "why_it_works": "ADHD attention responds to novelty; a fresh look can make a stale task feel new enough to begin.",
-    "tags": ["novelty", "gamify", "interest"]
+    "tags": [
+      "novelty",
+      "gamify",
+      "interest"
+    ],
+    "task_kinds": [
+      "doc",
+      "reading",
+      "study",
+      "code",
+      "admin"
+    ]
   },
   {
     "id": "start_from_end",
     "name": "Start from the end",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 3,
     "modality": "writing",
     "size": "small",
@@ -1099,12 +1657,21 @@
       "Let's peek at what done looks like."
     ],
     "why_it_works": "Picturing the end clarifies the goal and makes the path backwards easier to see.",
-    "tags": ["goal", "backwards", "clarity"]
+    "tags": [
+      "goal",
+      "backwards",
+      "clarity"
+    ],
+    "task_kinds": [
+      "doc"
+    ]
   },
   {
     "id": "restart_from_last",
     "name": "Pick up the thread",
-    "for_state": ["restuck"],
+    "for_state": [
+      "restuck"
+    ],
     "min_energy": 1,
     "modality": "screen",
     "size": "tiny",
@@ -1121,12 +1688,26 @@
       "Your progress is still there. Want to peek?"
     ],
     "why_it_works": "Rereading the last bit reloads your context so continuing feels like a small step, not a fresh start.",
-    "tags": ["resume", "context", "restart"]
+    "tags": [
+      "resume",
+      "context",
+      "restart"
+    ],
+    "task_kinds": [
+      "doc",
+      "reading",
+      "study",
+      "code",
+      "admin"
+    ]
   },
   {
     "id": "timer_visible",
     "name": "Make time visible",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "timer",
     "size": "tiny",
@@ -1143,12 +1724,22 @@
       "A visible timer might make {task} feel more contained."
     ],
     "why_it_works": "Time blindness makes tasks feel endless; seeing time pass makes the effort feel bounded and real.",
-    "tags": ["time blindness", "timer", "visual"]
+    "tags": [
+      "time blindness",
+      "timer",
+      "visual"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "choose_one_of_two",
     "name": "Choose between two",
-    "for_state": ["overwhelmed", "stuck"],
+    "for_state": [
+      "overwhelmed",
+      "stuck"
+    ],
     "min_energy": 1,
     "modality": "thinking",
     "size": "tiny",
@@ -1165,12 +1756,21 @@
       "Let's make this an easy pick."
     ],
     "why_it_works": "Fewer options reduce decision fatigue, and choosing gives a sense of control.",
-    "tags": ["choice", "decision", "overwhelm"]
+    "tags": [
+      "choice",
+      "decision",
+      "overwhelm"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "gentle_stop",
     "name": "Call it a day kindly",
-    "for_state": ["depleted"],
+    "for_state": [
+      "depleted"
+    ],
     "min_energy": 1,
     "modality": "rest",
     "size": "tiny",
@@ -1188,12 +1788,22 @@
       "Want to close up for today? It's a perfectly good choice."
     ],
     "why_it_works": "Ending on purpose (instead of drifting) protects tomorrow's energy and makes the next start easier.",
-    "tags": ["rest", "offramp", "end of day"]
+    "tags": [
+      "rest",
+      "offramp",
+      "end of day"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "quiet_minute",
     "name": "One quiet minute",
-    "for_state": ["overwhelmed", "depleted"],
+    "for_state": [
+      "overwhelmed",
+      "depleted"
+    ],
     "min_energy": 1,
     "modality": "rest",
     "size": "tiny",
@@ -1211,12 +1821,22 @@
       "A tiny pause might help everything feel smaller."
     ],
     "why_it_works": "A short pause lets a stressed nervous system downshift so the task feels less threatening.",
-    "tags": ["rest", "calm", "pause"]
+    "tags": [
+      "rest",
+      "calm",
+      "pause"
+    ],
+    "task_kinds": [
+      "any"
+    ]
   },
   {
     "id": "count_items",
     "name": "Count the parts",
-    "for_state": ["overwhelmed", "stuck"],
+    "for_state": [
+      "overwhelmed",
+      "stuck"
+    ],
     "min_energy": 2,
     "modality": "reading",
     "size": "tiny",
@@ -1233,12 +1853,24 @@
       "Sometimes knowing the size makes it smaller."
     ],
     "why_it_works": "Unknown size feels infinite; counting gives the task a real, finite shape.",
-    "tags": ["clarity", "size", "overwhelm"]
+    "tags": [
+      "clarity",
+      "size",
+      "overwhelm"
+    ],
+    "task_kinds": [
+      "doc",
+      "study",
+      "code"
+    ]
   },
   {
     "id": "set_up_space",
     "name": "Set up the space",
-    "for_state": ["stuck", "depleted"],
+    "for_state": [
+      "stuck",
+      "depleted"
+    ],
     "min_energy": 1,
     "modality": "environment",
     "size": "tiny",
@@ -1255,12 +1887,26 @@
       "Setting up counts as starting."
     ],
     "why_it_works": "Preparing removes friction for later, and it often slides naturally into starting.",
-    "tags": ["setup", "environment", "friction"]
+    "tags": [
+      "setup",
+      "environment",
+      "friction"
+    ],
+    "task_kinds": [
+      "doc",
+      "reading",
+      "study",
+      "code",
+      "admin"
+    ]
   },
   {
     "id": "fidget_focus",
     "name": "Busy hands",
-    "for_state": ["stuck", "restuck"],
+    "for_state": [
+      "stuck",
+      "restuck"
+    ],
     "min_energy": 2,
     "modality": "sensory",
     "size": "tiny",
@@ -1277,6 +1923,150 @@
       "A fidget might help {task} feel easier."
     ],
     "why_it_works": "Small movements can give a restless ADHD brain the stimulation it seeks, freeing attention for the task.",
-    "tags": ["sensory", "fidget", "stimulation"]
+    "tags": [
+      "sensory",
+      "fidget",
+      "stimulation"
+    ],
+    "task_kinds": [
+      "any"
+    ]
+  },
+  {
+    "id": "first_line_only",
+    "name": "Just the first line",
+    "for_state": [
+      "stuck",
+      "restuck",
+      "overwhelmed"
+    ],
+    "min_energy": 1,
+    "modality": "writing",
+    "size": "tiny",
+    "steps": [
+      "Write only the first line of {task} — \"Hi ___,\" counts. Sending can wait.",
+      "Add one more sentence, or save it as a draft. Both are wins."
+    ],
+    "literal_version": [
+      "Open a new message for {task}. Type only the greeting, for example: 'Hi Prof. Rao,'.",
+      "Type one sentence. Then choose: send it, or save it as a draft."
+    ],
+    "phrasings": [
+      "Messages are easier one line at a time.",
+      "What if {task} only needed a greeting right now?"
+    ],
+    "why_it_works": "Messages feel heavy because we imagine the whole conversation; a greeting is small enough to start without deciding everything.",
+    "tags": [
+      "message",
+      "email",
+      "text",
+      "reply",
+      "social"
+    ],
+    "task_kinds": [
+      "message"
+    ]
+  },
+  {
+    "id": "three_words_before_call",
+    "name": "Three words before a call",
+    "for_state": [
+      "stuck",
+      "overwhelmed"
+    ],
+    "min_energy": 1,
+    "modality": "writing",
+    "size": "tiny",
+    "steps": [
+      "Before {task}, jot three words you want to say. That's your whole script.",
+      "When you feel ready, call — or send a text instead. Both count."
+    ],
+    "literal_version": [
+      "Write three words you want to say during {task}.",
+      "Make the call, or send a text message instead."
+    ],
+    "phrasings": [
+      "A tiny script can make calls feel safer.",
+      "Want a three-word cheat sheet first?"
+    ],
+    "why_it_works": "Phone calls are unpredictable; a tiny script reduces the uncertainty that makes them hard to start.",
+    "tags": [
+      "call",
+      "phone",
+      "message",
+      "anxiety"
+    ],
+    "task_kinds": [
+      "message"
+    ]
+  },
+  {
+    "id": "one_item_only",
+    "name": "Just one item",
+    "for_state": [
+      "stuck",
+      "restuck",
+      "depleted"
+    ],
+    "min_energy": 1,
+    "modality": "movement",
+    "size": "tiny",
+    "steps": [
+      "For {task}, handle just one item — one sock, one dish, one thing back in its place.",
+      "Another one? Or stop here. One counts."
+    ],
+    "literal_version": [
+      "Pick up one item for {task} and put it where it belongs.",
+      "Choose: do one more item, or stop."
+    ],
+    "phrasings": [
+      "Chores shrink when you only count to one.",
+      "What's the single item you could do for {task}?"
+    ],
+    "why_it_works": "Chores feel endless; doing exactly one item gives a finish line and often builds momentum.",
+    "tags": [
+      "chore",
+      "home",
+      "laundry",
+      "clean",
+      "dishes"
+    ],
+    "task_kinds": [
+      "chore"
+    ]
+  },
+  {
+    "id": "gather_what_you_need",
+    "name": "Gather what you need",
+    "for_state": [
+      "stuck",
+      "depleted"
+    ],
+    "min_energy": 1,
+    "modality": "movement",
+    "size": "tiny",
+    "steps": [
+      "Just gather what {task} needs into one spot. Don't start it yet.",
+      "Everything's in one place. Do the first tiny bit, or leave it ready for later."
+    ],
+    "literal_version": [
+      "Put everything needed for {task} in one place. Do not start yet.",
+      "Choose: do the first small part, or stop."
+    ],
+    "phrasings": [
+      "Setting up counts as starting.",
+      "What if you only got things ready for {task}?"
+    ],
+    "why_it_works": "Getting materials together removes friction for later and often slides into starting.",
+    "tags": [
+      "chore",
+      "setup",
+      "admin",
+      "errand"
+    ],
+    "task_kinds": [
+      "chore",
+      "admin"
+    ]
   }
 ]
