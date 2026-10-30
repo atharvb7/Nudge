@@ -7,7 +7,6 @@
 ```bash
 git clone https://github.com/atharvb7/Vijaybhoomi-hackathon.git
 cd Vijaybhoomi-hackathon
-git checkout ccr-894fd7d6-h6imoz
 
 # macOS / Linux
 ./scripts/run-local.sh            # add --ml for semantic search (downloads ~1 GB)
