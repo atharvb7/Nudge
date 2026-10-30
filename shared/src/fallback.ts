@@ -59,6 +59,8 @@ export function cardFitsKind(c: StrategyCard, kind: TaskKindName, task = ''): bo
   // a call or a chore can't be "opened": skip screen-only wording even on general cards
   const callish = kind === 'message' && /^(call|ring|phone)\b/i.test(task.trim());
   if ((kind === 'chore' || callish) && SCREEN_ONLY.test(c.steps[0])) return false;
+  // you don't write "the first line" of a phone call
+  if (callish && /first line|greeting|Sending/i.test(c.steps[0] + c.literal_version[0])) return false;
   return true;
 }
 
@@ -97,7 +99,7 @@ export function rankCards(req: SequenceRequest, rand: () => number = Math.random
     if (req.energy <= 1 && (c.is_rest || c.modality === 'sensory' || c.modality === 'rest')) s *= 1.6;
     if (req.state === 'overwhelmed' && /overwhelm|sensory|calm|choice|self-compassion/.test(c.tags.join(' '))) s *= 1.4;
     if (req.energy >= 3 && c.is_rest && req.state !== 'depleted') s *= 0.4; // don't push rest on someone with energy, but keep it possible
-    if (req.state === 'depleted' && (c.is_rest || c.modality === 'rest' || c.modality === 'body')) s *= 1.8; // depleted: rest first
+    if (req.state === 'depleted' && (c.is_rest || c.modality === 'rest' || c.modality === 'body')) s *= 2.5; // depleted: rest first
     if (kind !== 'unknown' && (c.task_kinds ?? []).includes(kind as never)) s *= 1.3; // made for this kind of task
     s *= 0.9 + rand() * 0.2; // gentle jitter so ties rotate
     return { c, s };
@@ -177,7 +179,7 @@ export function localSequence(req: SequenceRequest, region: Region = 'IN', rand:
 
   const rotation = req.history.length + Math.floor(rand() * 3);
   const taskForText = isSafeTaskLabel(req.task) ? req.task : '';
-  let next = fillTask(stepText(card, index, req.wording_style), taskForText, cleanTabTitle(req.task_tab_title) || undefined, req.wording_style);
+  let next = fillTask(stepText(card, index, req.wording_style), taskForText, req.task_tab_title, req.wording_style);
   if (findBannedWords(next).length) next = softenCopy(next);
 
   const depleted = req.state === 'depleted';

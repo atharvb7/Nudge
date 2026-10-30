@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   COPY,
   REST_IDEAS,
@@ -21,6 +21,8 @@ export function BodyDouble({
   settings,
   step,
   initialMinutes = 15,
+  initialStartedAt,
+  onTimerChange,
   onDone,
   onStuckAgain,
   onStop,
@@ -29,13 +31,20 @@ export function BodyDouble({
   settings: Settings;
   step: string | null;
   initialMinutes?: number;
+  /** when the timer started — kept across panel close/reopen so time keeps running */
+  initialStartedAt?: number;
+  onTimerChange?: (minutes: number, startedAt: number) => void;
   onDone: () => void;
   onStuckAgain: () => void;
   onStop: () => void;
   onSound: (s: Settings['bodyDoubleSound']) => void;
 }) {
   const [minutes, setMinutes] = useState(initialMinutes);
-  const [startedAt, setStartedAt] = useState(Date.now());
+  const [startedAt, setStartedAt] = useState(initialStartedAt ?? Date.now());
+  useEffect(() => {
+    onTimerChange?.(minutes, startedAt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minutes, startedAt]);
   const [numbers, setNumbers] = useState(false);
   const [line, setLine] = useState(STILL_HERE[0]);
   const [finished, setFinished] = useState(false);
@@ -385,9 +394,17 @@ export function Safety({ payload, onBack, onFrustrated }: { payload: SafetyPaylo
       setCopied(ok ? phone : null);
     }
   };
+  // move focus here so a screen-reader user hears the message straight away
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, [payload]);
   return (
-    <div className="stack fade-in" role="region" aria-label="Support">
-      <section className="card calm">
+    <div className="stack fade-in" role="region" aria-labelledby="safety-heading">
+      <h1 id="safety-heading" ref={headingRef} tabIndex={-1} style={{ outline: "none" }}>
+        You matter
+      </h1>
+      <section className="card calm" role="status" aria-live="polite">
         <p style={{ fontSize: '1.1rem', margin: 0 }}>{payload.message}</p>
       </section>
       <ul className="list" aria-label="People you can talk to right now">

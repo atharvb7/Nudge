@@ -3,7 +3,9 @@ import {
   STRATEGIES,
   STRATEGY_BY_ID,
   wakingDayKey,
-  looksLikeFeeling,
+  cleanTabTitle,
+  extractTask,
+  isSafeTaskLabel,
   thompsonScores,
   type ActionButton,
   type BrainDumpResponse,
@@ -11,13 +13,15 @@ import {
   type FutureNote,
   type SafetyPayload,
   type SequenceAction,
+  type SequenceRequest,
   type SequenceState,
   type Session,
   type StorageShape,
 } from '@nudge/shared';
 import { useHeartbeat, useNudgeStore, usePanelIntent, actions } from './store';
 import { applyDisplaySettings } from '../lib/a11y';
-import { localSafety, requestBrainDump, requestOfframp, requestSequence } from '../lib/api';
+import { SLOW_HINT_MS, localSafety, quickSequence, requestBrainDump, requestOfframp, requestSequence } from '../lib/api';
+import { RESTORABLE, loadPanelUi, savePanelUi, type RestorableScreen } from '../lib/panelUi';
 import { addStep, doneCount, endSession, historyFor, lowerEnergy, markOutcome, resumeFromLastCompleted, shouldWelcomeBack, startSession } from '../lib/session';
 import { sendToBackground } from '../lib/messages';
 import { mutate, type PanelIntent } from '../lib/storage';
@@ -45,6 +49,9 @@ type Screen =
   | 'settings'
   | 'demo';
 
+/** Screens where a hotkey / toolbar press must keep what's on screen. */
+const ACTIVE_SCREENS: Screen[] = ['step', 'celebrate', 'bodydouble', 'loading', 'resting', 'braindump', 'safety', 'frustrated'];
+
 const CRISIS_DEMO_PHRASE = "honestly I don't want to be alive anymore";
 
 function shortStep(t: string): string {
@@ -64,6 +71,16 @@ export function App() {
   const [offramp, setOfframp] = useState<{ note: FutureNote | null; rest: string | null; loading: boolean }>({ note: null, rest: null, loading: false });
   const [loadingText, setLoadingText] = useState('Finding a tiny first step…');
   const [bdMinutes, setBdMinutes] = useState(15);
+  const [bdStartedAt, setBdStartedAt] = useState<number | null>(null);
+  /** after ~2.5 s of waiting, offer "Give me a quick idea now" */
+  const [slow, setSlow] = useState(false);
+  const quickIdea = useRef<(() => void) | null>(null);
+  /** each sequence request gets a token; a late reply for an old token is ignored */
+  const reqToken = useRef(0);
+  /** the panel restored what it was showing before deciding anything else */
+  const [ready, setReady] = useState(false);
+  const screenRef = useRef<Screen>('home');
+  screenRef.current = screen;
   const recent = useRef<string[]>([]);
   const sessionRef = useRef<Session | null>(null);
   const booted = useRef(false);
@@ -80,6 +97,10 @@ export function App() {
     if (!store || booted.current) return;
     booted.current = true;
     sessionRef.current = store.session;
+    void bootScreen(store);
+  }, [store]);
+
+  const bootScreen = async (store: StorageShape) => {
     // energy: today's choice, else a gentle 2 late at night, else whatever was chosen last
     if (store.energyToday?.day === wakingDayKey()) setEnergyState(store.energyToday.energy);
     else if (new Date().getHours() >= 22 || new Date().getHours() < 5) setEnergyState(2);
@@ -92,8 +113,34 @@ export function App() {
       void chrome.alarms.clear('nudge-break-end');
       setScreen('welcome');
     } else if (br) setScreen('resting');
-    else if (store.session && shouldWelcomeBack(store.session)) setScreen('welcome');
-  }, [store]);
+    else {
+      // closing the panel never throws away a step, a timer or a brain dump
+      const ui = store.session && !store.session.endedAt ? await loadPanelUi() : null;
+      if (ui && (ui.screen !== 'braindump' || ui.dump)) {
+        if (ui.resp) setResp(ui.resp);
+        if (ui.dump) setDump(ui.dump);
+        if (ui.bodyDouble) {
+          setBdMinutes(ui.bodyDouble.minutes);
+          setBdStartedAt(ui.bodyDouble.startedAt);
+        }
+        setScreen(ui.screen === 'step' && !ui.resp ? 'home' : ui.screen);
+      } else if (store.session && shouldWelcomeBack(store.session)) setScreen('welcome');
+    }
+    setReady(true);
+  };
+
+  // remember what's on screen (only screens worth coming back to)
+  useEffect(() => {
+    if (!ready) return;
+    if ((RESTORABLE as string[]).includes(screen)) {
+      void savePanelUi({
+        screen: screen as RestorableScreen,
+        resp,
+        dump,
+        bodyDouble: screen === 'bodydouble' && bdStartedAt ? { minutes: bdMinutes, startedAt: bdStartedAt } : null,
+      });
+    } else if (screen !== 'settings' && screen !== 'demo' && screen !== 'loading') void savePanelUi(null);
+  }, [ready, screen, resp, dump, bdMinutes, bdStartedAt]);
 
   const persistSession = useCallback(async (s: Session | null) => {
     sessionRef.current = s;
@@ -120,52 +167,71 @@ export function App() {
       if (!s) return;
       const st = opts.state ?? seqState;
       setLoadingText(action === 'smaller' ? 'Making it smaller…' : action === 'different' ? 'Finding a different idea…' : 'Finding a tiny step…');
+      setSlow(false);
       setScreen('loading');
-      const ask = (act: SequenceAction, exclude?: string[]) =>
-        requestSequence(
-          {
-            task: s.task,
-            task_tab_title: s.taskTabTitle,
-            state: st,
-            energy: opts.energy ?? s.energy,
-            history: historyFor(s),
-            transcript: opts.transcript,
-            top_strategies: thompsonScores(STRATEGIES, store.stats).slice(0, 12),
-            exclude_ids: exclude,
-            action: act,
-            wording_style: store.settings.wordingStyle,
-            explain_why: store.settings.explainWhy,
-            recent_phrasings: recent.current.slice(-6),
-          },
-          store.settings,
-        );
-      let r = await ask(action, opts.exclude);
-      // never hand back the exact step someone just got stuck on
-      if (opts.avoidText && r.mode !== 'safety' && r.next_step.trim() === opts.avoidText.trim()) {
-        r = await ask('different', [...(opts.exclude ?? []), r.strategy_id]);
-      }
-      if (r.mode === 'safety' && r.safety) {
-        // The helper noticed something the on-device check missed. The words that
-        // started this session must not be kept: undo the session and its win.
-        const js = justStarted.current;
-        const cur = sessionRef.current;
-        if (js && cur && cur.id === js.sessionId && cur.steps.length === 0) {
-          await persistSession(null);
-          await actions.removeWin(js.winId);
+      const req = (act: SequenceAction, exclude?: string[]): SequenceRequest => ({
+        task: isSafeTaskLabel(s.task) ? s.task : '',
+        task_tab_title: cleanTabTitle(s.taskTabTitle) || undefined,
+        state: st,
+        energy: opts.energy ?? s.energy,
+        history: historyFor(s),
+        transcript: opts.transcript,
+        // every card's personal score, so a 👎'd card keeps its low score instead of falling back to neutral
+        top_strategies: thompsonScores(STRATEGIES, store.stats),
+        exclude_ids: exclude,
+        action: act,
+        wording_style: store.settings.wordingStyle,
+        explain_why: store.settings.explainWhy,
+        recent_phrasings: recent.current.slice(-6),
+      });
+
+      const token = ++reqToken.current;
+      const deliver = async (r0: StepResp) => {
+        let r = r0;
+        // never hand back the exact step someone just got stuck on (decided locally: no second wait)
+        if (opts.avoidText && r.mode !== 'safety' && r.next_step.trim() === opts.avoidText.trim()) {
+          r = quickSequence(req('different', [...(opts.exclude ?? []), r.strategy_id]), store.settings);
+        }
+        if (r.mode === 'safety' && r.safety) {
+          // The helper noticed something the on-device check missed. The words that
+          // started this session must not be kept: undo the session and its win.
+          const js = justStarted.current;
+          const cur = sessionRef.current;
+          if (js && cur && cur.id === js.sessionId && cur.steps.length === 0) {
+            await persistSession(null);
+            await actions.removeWin(js.winId);
+          }
+          justStarted.current = null;
+          recent.current = [];
+          showSafety(r.safety);
+          return;
         }
         justStarted.current = null;
-        recent.current = [];
-        showSafety(r.safety);
-        return;
-      }
-      justStarted.current = null;
-      const next = addStep(sessionRef.current ?? s, r);
-      await persistSession(next);
-      recent.current = [...recent.current, ...(r.lead ? [r.lead] : []), r.next_step].slice(-8);
-      void actions.shown(r.strategy_id);
-      void sendToBackground({ kind: 'stepStarted', index: next.steps.length - 1 });
-      setResp(r);
-      setScreen('step');
+        const next = addStep(sessionRef.current ?? s, r);
+        await persistSession(next);
+        recent.current = [...recent.current, ...(r.lead ? [r.lead] : []), r.next_step].slice(-8);
+        void actions.shown(r.strategy_id);
+        void sendToBackground({ kind: 'stepStarted', index: next.steps.length - 1 });
+        setResp(r);
+        setScreen('step');
+      };
+
+      const slowTimer = setTimeout(() => {
+        if (reqToken.current === token) setSlow(true);
+      }, SLOW_HINT_MS);
+      // "Give me a quick idea now": answer from the built-in cards at once, ignore the late reply
+      quickIdea.current = () => {
+        if (reqToken.current !== token) return;
+        reqToken.current += 1;
+        clearTimeout(slowTimer);
+        quickIdea.current = null;
+        void deliver(quickSequence(req(action, opts.exclude), store.settings));
+      };
+      const r = await requestSequence(req(action, opts.exclude), store.settings);
+      clearTimeout(slowTimer);
+      if (reqToken.current !== token) return; // already answered (quick idea) or superseded
+      quickIdea.current = null;
+      await deliver(r);
     },
     [store, seqState, persistSession, showSafety],
   );
@@ -180,34 +246,44 @@ export function App() {
   const begin = useCallback(
     async (taskIn: string, transcript?: string, state: SequenceState = seqState, energyIn: Energy = energy) => {
       if (!store) return;
-      const said = `${taskIn} ${transcript ?? ''}`;
-      const safe = localSafety(said, store.settings.region);
+      const typed = (taskIn ?? '').trim();
+      // safety first: nothing below runs, and nothing is stored, if this sounds like a crisis
+      const safe = localSafety(`${typed} ${transcript ?? ''}`, store.settings.region);
       if (safe) return showSafety(safe);
-      // "this assignment is killing me" is a feeling, not a task name: send it as what you said
-      if (looksLikeFeeling(taskIn)) {
-        transcript = [taskIn.trim(), transcript].filter(Boolean).join('. ');
-        taskIn = '';
+      // Split what was said into a task name and a feeling: "ugh I can't start my essay"
+      // → task "essay", and the whole sentence goes along as what you said.
+      let task = '';
+      let said = transcript?.trim() || undefined;
+      if (typed) {
+        if (isSafeTaskLabel(typed)) task = typed;
+        else {
+          task = extractTask(typed);
+          said = [typed, said].filter(Boolean).join('. ');
+        }
       }
-      let task = taskIn.trim();
+      if (!task && said) task = extractTask(said);
       // the pinned tab's title already goes along as the concrete name
-      const tabTitle = store.settings.taskTab?.title?.trim() ?? '';
+      const tabTitle = cleanTabTitle(store.settings.taskTab?.title);
       if (task && tabTitle && task.toLowerCase() === tabTitle.toLowerCase()) task = '';
-      if (!task && transcript && !looksLikeFeeling(transcript) && transcript.split(/\s+/).length <= 8) task = transcript.trim();
       const cur = sessionRef.current;
-      const reuse = cur && !cur.endedAt && Date.now() - cur.lastActiveAt < 3 * 3_600_000 && (!task || task === cur.task);
+      const named = !!task || (!!typed && !said);
+      // Reuse the open session only when no different task was named — and never one whose
+      // name isn't safe to repeat. Otherwise start fresh: an old task never leaks into a new ask.
+      const reuse =
+        !!cur && !cur.endedAt && Date.now() - cur.lastActiveAt < 3 * 3_600_000 && (cur.task === '' || isSafeTaskLabel(cur.task)) && (named ? task === cur.task : true);
       if (!reuse) {
         await closeSession('drifted');
-        const fresh = startSession(task, energyIn, store.settings.taskTab?.title || undefined);
+        const fresh = startSession(task, energyIn, tabTitle || undefined);
         await persistSession(fresh);
         recent.current = [];
-        const winId = await actions.addWin('started', `Started ${task || store.settings.taskTab?.title || 'something hard'}`);
+        const winId = await actions.addWin('started', `Started ${task || tabTitle || 'something hard'}`);
         justStarted.current = { sessionId: fresh.id, winId };
       } else if (cur && cur.energy !== energyIn) {
         await persistSession({ ...cur, energy: energyIn });
       }
       void sendToBackground({ kind: 'newSession' });
       setSeqState(state);
-      await sequence('start', { transcript, state, energy: energyIn });
+      await sequence('start', { transcript: said, state, energy: energyIn });
     },
     [store, seqState, energy, sequence, showSafety, closeSession, persistSession],
   );
@@ -281,7 +357,7 @@ export function App() {
           return;
         case 'different':
           await persistSession(marked);
-          await actions.feedback(resp.strategy_id, 'skip');
+          await actions.feedback(resp.strategy_id, 'different'); // a gentle "not this one" (half a 👎)
           await sequence('different', { exclude: [resp.strategy_id] });
           return;
         case 'rest':
@@ -304,6 +380,9 @@ export function App() {
   const handleIntent = (intent: PanelIntent) => {
     switch (intent.screen) {
       case 'stuck': {
+        // Already mid-step, mid-timer or waiting for an idea? Keep it — the hotkey
+        // or toolbar must never throw away what you're doing.
+        if (ACTIVE_SCREENS.includes(screenRef.current)) break;
         // "Help me start" from the page: start right away with the pinned task /
         // open session at the remembered energy — no second tap needed
         const st: SequenceState = intent.state === 'restuck' ? 'restuck' : intent.state;
@@ -334,14 +413,14 @@ export function App() {
     }
   };
   usePanelIntent((intent: PanelIntent) => {
-    if (!store || !store.settings.onboarded) {
+    if (!store || !store.settings.onboarded || !ready) {
       pendingIntent.current = intent; // handled once the panel is ready
       return;
     }
     handleIntent(intent);
   });
   useEffect(() => {
-    if (store?.settings.onboarded && pendingIntent.current) {
+    if (store?.settings.onboarded && ready && pendingIntent.current) {
       const i = pendingIntent.current;
       pendingIntent.current = null;
       handleIntent(i);
@@ -368,7 +447,16 @@ export function App() {
   let body: JSX.Element;
   switch (screen) {
     case 'loading':
-      body = <Loading text={loadingText} />;
+      body = (
+        <div className="stack center">
+          <Loading text={slow ? 'Still thinking…' : loadingText} />
+          {slow && (
+            <button type="button" className="btn primary big" onClick={() => quickIdea.current?.()}>
+              Give me a quick idea now
+            </button>
+          )}
+        </div>
+      );
       break;
     case 'step':
       body = resp ? (
@@ -378,6 +466,7 @@ export function App() {
           onAction={(b) => void onAction(b)}
           onTimer={(m) => {
             setBdMinutes(m);
+            setBdStartedAt(null);
             setScreen('bodydouble');
           }}
           onBrainDump={() => {
@@ -401,6 +490,7 @@ export function App() {
           onNext={() => void sequence('next')}
           onBodyDouble={() => {
             setBdMinutes(15);
+            setBdStartedAt(null);
             void sendToBackground({ kind: 'stepStarted', index: (current?.steps.length ?? 1) - 1 });
             setScreen('bodydouble');
           }}
@@ -415,6 +505,11 @@ export function App() {
         <BodyDouble
           settings={s}
           initialMinutes={bdMinutes}
+          initialStartedAt={bdStartedAt ?? undefined}
+          onTimerChange={(m, at) => {
+            setBdMinutes(m);
+            setBdStartedAt(at);
+          }}
           step={current?.steps.length && current.steps[current.steps.length - 1].outcome !== 'done' ? current.steps[current.steps.length - 1].step : current?.task ? `Keeping you company with ${current.task}.` : null}
           onSound={(v) => void actions.updateSettings({ bodyDoubleSound: v })}
           onDone={async () => {

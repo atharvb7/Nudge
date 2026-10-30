@@ -15,7 +15,6 @@ const NAV = [
   { href: '/privacy', label: 'Privacy', icon: '🔒' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
   { href: '/demo', label: 'Demo', icon: '🎬' },
-  { href: '/insights', label: 'Insights', icon: '💬' },
 ];
 
 function StatusPill() {

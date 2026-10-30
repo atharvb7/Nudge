@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Nudge — Insights',
-  description: 'What neurodivergent students told us, and which features it shaped.',
+  title: 'Nudge — Pitch slide template',
+  description: 'A template for the pitch "Insights" slide. Fill it only with real, consented interview quotes.',
 };
 
 const QUOTE_SLOTS = [
@@ -62,16 +62,18 @@ export default function InsightsPage() {
     <div className="n-rise">
       <section aria-labelledby="slide-title" className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
         <div className="bg-accent-soft px-6 py-8 sm:px-10 sm:py-10">
-          <p className="text-sm font-bold uppercase tracking-widest text-muted">Insights</p>
+          <p className="text-sm font-bold uppercase tracking-widest text-muted">Pitch slide template · not part of the app</p>
           <h1 id="slide-title" className="mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">
             What students told us — and what it changed
           </h1>
-          <p className="mt-2 max-w-2xl text-muted">Interviews with [number] neurodivergent students, before and during the event.</p>
+          <p className="mt-2 max-w-2xl text-muted">
+            [Template] Write here how many neurodivergent students you actually interviewed, and when — for example “Interviews with 4 students, before the event”. Only count real, consented interviews.
+          </p>
         </div>
 
         <div className="px-6 py-6 sm:px-10">
           <div role="note" className="rounded-soft border-2 border-dashed border-calm bg-calm-soft p-4 text-ink">
-            <p className="font-bold">These are placeholders.</p>
+            <p className="font-bold">This is a template. Nothing on this slide is a real quote yet.</p>
             <p className="text-sm">
               Replace each card with a real quote from your interviews, used with the person&apos;s consent. Please don&apos;t invent or paraphrase quotes —
               anonymise names and keep only what they agreed to share.
@@ -84,8 +86,8 @@ export default function InsightsPage() {
                 <span aria-hidden="true" className="text-4xl leading-none text-accent">
                   “
                 </span>
-                <p className="mt-1 flex-1 italic text-muted">[Paste quote from {who}]</p>
-                <p className="mt-4 text-sm font-semibold text-ink">Feature it shaped: [fill in]</p>
+                <p className="mt-1 flex-1 italic text-muted">[Template: paste a real quote from {who}, word for word, only with their consent]</p>
+                <p className="mt-4 text-sm font-semibold text-ink">Feature it shaped: [the feature this real quote led to]</p>
                 <span className="sr-only">Placeholder {i + 1} of {QUOTE_SLOTS.length}</span>
               </li>
             ))}

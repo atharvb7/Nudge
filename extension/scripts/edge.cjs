@@ -290,7 +290,13 @@ function mockBackend() {
     await panel.getByRole('button', { name: 'Help me start', exact: true }).click();
     await panel.locator('.step-text').waitFor({ timeout: 30000 });
     check('empty input still gets a tiny step', (await panel.locator('.step-text').innerText()).length > 5);
+    const beforeTooBig = await panel.locator('.step-text').innerText();
     await panel.getByRole('button', { name: /^Too much right now/ }).click();
+    // wait for the *new* step, not the one still on screen
+    await panel.waitForFunction((old) => {
+      const el = document.querySelector('.step-text');
+      return !!el && el.textContent !== old;
+    }, beforeTooBig, { timeout: 15000 }).catch(() => undefined);
     await panel.locator('.step-text').waitFor();
     const restOffered = await panel.getByText(/Resting is a perfectly good choice|Resting is also a valid choice/).count();
     check('at the lowest energy "Too big" offers rest alongside a smaller step', restOffered > 0);

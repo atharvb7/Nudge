@@ -309,7 +309,7 @@ describe('task labels', () => {
     const { fillTask } = await import('../src');
     expect(fillTask('Open {task}.', 'this assignment is killing me', 'DBMS_Assignment.pdf', 'warm')).toBe('Open DBMS_Assignment.pdf.');
     expect(fillTask('Open {task}.', "I'm so stuck", undefined, 'warm')).toBe('Open your task.');
-    expect(fillTask('Open {task}.', 'DBMS assignment', undefined, 'warm')).toBe('Open DBMS assignment.');
+    expect(fillTask('Open {task}.', 'DBMS assignment', undefined, 'warm')).toBe('Open your DBMS assignment.');
   });
 });
 

@@ -20,7 +20,9 @@ import { truncate } from './session';
 // Backend client. Every call has a timeout and an offline fallback built from
 // the pre-written strategy cards, so help never breaks.
 
-const SEQUENCE_TIMEOUT_MS = 25_000;
+/** The backend's own budget is 8 s; after this the pre-written card is used. The panel offers a quick idea after 2.5 s. */
+export const SEQUENCE_TIMEOUT_MS = 9_000;
+export const SLOW_HINT_MS = 2_500;
 
 async function post<T>(base: string, path: string, body: unknown, timeoutMs: number): Promise<T> {
   const ctrl = new AbortController();
@@ -47,8 +49,17 @@ export function localSafety(text: string, region: Region): SafetyPayload | null 
   return level === 'none' ? null : safetyPayload(region, level);
 }
 
+function cleanRequest(req: SequenceRequest): SequenceRequest {
+  return { ...req, transcript: req.transcript ? truncate(req.transcript) : undefined, task: truncate(req.task, 300) };
+}
+
+/** An instant idea from the built-in cards — for "Give me a quick idea now" and every fallback. */
+export function quickSequence(req: SequenceRequest, settings: Settings): WithOffline<SequenceResponse> {
+  return { ...localSequence(cleanRequest(req), settings.region), offline: true };
+}
+
 export async function requestSequence(req: SequenceRequest, settings: Settings): Promise<WithOffline<SequenceResponse>> {
-  const clean: SequenceRequest = { ...req, transcript: req.transcript ? truncate(req.transcript) : undefined, task: truncate(req.task, 300) };
+  const clean = cleanRequest(req);
   const safety = localSafety(`${clean.task} ${clean.transcript ?? ''}`, settings.region);
   if (safety) return { ...localSequence(clean, settings.region), offline: true };
   try {
@@ -79,13 +90,13 @@ export async function requestOfframp(
 export async function requestBrainDump(transcript: string, style: WordingStyle, energy: Energy, settings: Settings): Promise<WithOffline<BrainDumpResponse>> {
   const text = truncate(transcript);
   const safety = localSafety(text, settings.region);
-  if (safety) return { ...localBrainDump(text, style, settings.region), offline: true };
+  if (safety) return { ...localBrainDump(text, style, settings.region, energy), offline: true };
   try {
-    const r = await post<BrainDumpResponse>(settings.backendUrl, '/braindump', { transcript: text, wording_style: style, energy, region: settings.region }, 25_000);
+    const r = await post<BrainDumpResponse>(settings.backendUrl, '/braindump', { transcript: text, wording_style: style, energy, region: settings.region }, SEQUENCE_TIMEOUT_MS);
     if (r.mode !== 'safety' && !r.pick) throw new Error('no pick');
     return { ...r, offline: false };
   } catch {
-    return { ...localBrainDump(text, style, settings.region), offline: true };
+    return { ...localBrainDump(text, style, settings.region, energy), offline: true };
   }
 }
 

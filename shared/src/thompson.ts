@@ -81,6 +81,14 @@ export function thompsonScores(
     .sort((a, b) => b.score - a.score);
 }
 
+/** "Different idea": not a 👎, but a gentle signal this card didn't fit (half a 👎). */
+export function recordDifferent(stats: StrategyStats, id: string): StrategyStats {
+  const s = { ...(stats[id] ?? emptyStat()) };
+  s.skip += 1;
+  s.down += 0.5;
+  return { ...stats, [id]: s };
+}
+
 export function recordFeedback(
   stats: StrategyStats,
   id: string,

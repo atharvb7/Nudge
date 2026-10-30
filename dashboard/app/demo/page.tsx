@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { detectCrisis, safetyPayload, type SafetyPayload, type SimulateKind } from '@nudge/shared';
 import { useNudge } from '@/lib/nudge-context';
@@ -69,6 +70,13 @@ export default function DemoPage() {
         title="Demo mode"
         lede="Walk through the key moments without waiting for them to happen. Great for showing Nudge to someone."
       />
+      <p className="mb-6 text-sm text-muted">
+        Preparing a pitch?{' '}
+        <Link href="/insights" className="font-semibold text-accent underline underline-offset-4">
+          Pitch slide template
+        </Link>{' '}
+        — a page for real, consented interview quotes (it isn’t part of the app).
+      </p>
       <p role="status" aria-live="polite" className={msg ? 'mb-6 rounded-soft bg-accent-soft p-3 text-ink' : 'sr-only'}>
         {msg}
       </p>

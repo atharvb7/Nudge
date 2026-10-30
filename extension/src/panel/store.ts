@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   wakingDayKey,
+  recordDifferent,
   recordFeedback,
   recordShown,
   uid,
@@ -90,9 +91,9 @@ export const actions = {
   async removeWin(id: string) {
     await mutate('wins', (w) => w.filter((x) => x.id !== id));
   },
-  async feedback(strategyId: string, fb: 'up' | 'down' | 'skip') {
+  async feedback(strategyId: string, fb: 'up' | 'down' | 'skip' | 'different') {
     if (!strategyId) return;
-    await mutate('stats', (st) => recordFeedback(st, strategyId, fb));
+    await mutate('stats', (st) => (fb === 'different' ? recordDifferent(st, strategyId) : recordFeedback(st, strategyId, fb)));
   },
   async shown(strategyId: string) {
     if (!strategyId) return;

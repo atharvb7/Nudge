@@ -304,6 +304,12 @@ export function extractTask(text: string): string {
   return '';
 }
 
+/** "essay" → "your essay"; file names, "the call with mom" and "my notes" stay as they are. */
+function possessive(label: string): string {
+  if (!label || looksLikeFileName(label) || /^(the|a|an|my|your|our|this|that|these|those)\b/i.test(label)) return label;
+  return `your ${label}`;
+}
+
 /** Replace {task} placeholders. Literal mode prefers the exact object name when it's the same task. */
 export function fillTask(text: string, task: string, taskTabTitle: string | undefined, style: WordingStyle): string {
   const concrete = cleanTabTitle(taskTabTitle);
@@ -315,8 +321,9 @@ export function fillTask(text: string, task: string, taskTabTitle: string | unde
     a.toLowerCase().split(/[\s_.-]+/).some((w) => w.length >= 3 && b.toLowerCase().includes(w));
   let label: string;
   if (said && concrete && style === 'literal' && related(said, concrete)) label = concrete;
-  else if (said) label = taskLabel(said);
-  else label = concrete || (style === 'literal' ? 'your task' : 'your task');
+  else if (said) label = possessive(taskLabel(said));
+  else if (concrete) label = possessive(concrete);
+  else label = /untitled\s+(document|spreadsheet|presentation)/i.test(taskTabTitle ?? '') ? `your ${/spreadsheet/i.test(taskTabTitle ?? '') ? 'spreadsheet' : /presentation/i.test(taskTabTitle ?? '') ? 'slides' : 'document'}` : 'your task';
   // grammar: "the finished {task}" with "your essay" → "the finished essay", never "the finished your essay"
   const bare = label.replace(/^(?:your|the)\s+/i, '');
   let out = text
