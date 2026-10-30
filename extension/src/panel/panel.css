@@ -720,12 +720,32 @@ button.pill {
 }
 
 /* "See everything I heard" disclosure */
+details.card.disclosure {
+  padding: 4px 16px;
+  box-shadow: none;
+}
 details.disclosure > summary {
   cursor: pointer;
-  min-height: 44px;
+  min-height: 48px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  font-size: 1rem;
   font-weight: 600;
+  list-style: none;
+}
+details.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+details.disclosure > summary::after {
+  content: '▾';
+  color: var(--n-text-muted);
+}
+details.disclosure[open] > summary::after {
+  content: '▴';
+}
+details.disclosure[open] {
+  padding-bottom: 14px;
 }
 .wins-today {
   margin-top: 10px;
