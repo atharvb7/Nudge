@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   CHECKIN_OPTIONS,
   COPY,
-  dayKey,
+  wakingDayKey,
   isLearning,
   learningDaysLeft,
   type Energy,
@@ -34,7 +34,7 @@ export function Home({
   const [checked, setChecked] = useState(false);
   const voice = s.inputStyle === 'voice';
   const learning = isLearning(s);
-  const today = dayKey();
+  const today = wakingDayKey();
   const showCheckin = learning && !checked && !store.checkins.some((c) => c.day === today) && new Date().getHours() >= 17;
 
   const quick = [

@@ -5,7 +5,7 @@ import { reshufflePlan, weightFor } from './plan';
 import { unlockedFor } from './themes';
 import { withDefaults, defaultStorage } from './defaults';
 import type { Energy, PlanItem, Settings, StorageShape } from './types';
-import { dayKey, uid } from './util';
+import { uid, wakingDayKey } from './util';
 
 // Dashboard ⇄ extension protocol. The dashboard posts messages to its own
 // window; a bridge content script (only on localhost dashboards) relays them
@@ -109,7 +109,7 @@ export function applyBridgeRequest(store: StorageShape, req: BridgeRequest, now 
     case 'getSnapshot':
       return { store, data: null };
     case 'setEnergy': {
-      const energyToday = { day: dayKey(now), energy: req.energy };
+      const energyToday = { day: wakingDayKey(now), energy: req.energy };
       return { store: { ...store, energyToday }, data: reshufflePlan(store.plan, req.energy) };
     }
     case 'planAdd': {

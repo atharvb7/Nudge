@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  dayKey,
+  wakingDayKey,
   recordFeedback,
   recordShown,
   uid,
@@ -99,13 +99,13 @@ export const actions = {
     await mutate('stats', (st) => recordShown(st, strategyId));
   },
   async setEnergy(energy: Energy) {
-    await mutate('energyToday', () => ({ day: dayKey(), energy }));
+    await mutate('energyToday', () => ({ day: wakingDayKey(), energy }));
   },
   async saveNote(note: FutureNote) {
     await mutate('notes', (n) => [...n, note].slice(-50));
   },
   async checkin(feeling: 1 | 2 | 3 | 4 | 5) {
-    const day = dayKey();
+    const day = wakingDayKey();
     await mutate('checkins', (c) => [...c.filter((x) => x.day !== day), { t: Date.now(), day, feeling }]);
     await actions.addWin('checkin', 'Checked in with myself');
   },

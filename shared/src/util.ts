@@ -14,6 +14,14 @@ export function dayKey(t: number = Date.now()): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+/** Hour (local) at which a new "waking day" starts. Night owls' 1 am still belongs to yesterday. */
+export const DAY_ROLLOVER_HOUR = 5;
+
+/** Like dayKey, but the day turns over at 05:00 local, not midnight. */
+export function wakingDayKey(t: number = Date.now()): string {
+  return dayKey(t - DAY_ROLLOVER_HOUR * 3_600_000);
+}
+
 export function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }

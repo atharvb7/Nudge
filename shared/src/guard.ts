@@ -1,5 +1,5 @@
 import type { NudgeGuard, Settings, UserState } from './types';
-import { DAY, MIN, dayKey, isWithinQuietHours } from './util';
+import { DAY, HOUR, MIN, isWithinQuietHours, wakingDayKey } from './util';
 
 // Anti-nag safeguards, designed with rejection sensitivity in mind:
 // at most one auto-nudge per 20 min, "I'm fine" doubles the cooldown, and
@@ -11,7 +11,7 @@ export const HYDRATION_AFTER_FLOW_MIN = 90;
 
 export function freshGuard(now = Date.now()): NudgeGuard {
   return {
-    day: dayKey(now),
+    day: wakingDayKey(now),
     lastAutoNudgeAt: 0,
     cooldownMin: BASE_COOLDOWN_MIN,
     dismissalsToday: 0,
@@ -23,10 +23,37 @@ export function freshGuard(now = Date.now()): NudgeGuard {
   };
 }
 
-/** New calendar day: everything resets — nothing carries over as a penalty. */
+/** Quiet choices last at least this long, even across the 05:00 rollover. */
+export const MIN_QUIET_MS = 4 * HOUR;
+
+/**
+ * New *waking* day (05:00, not midnight — night owls are our users): the
+ * counters reset and nothing carries over as a penalty. A quiet choice the user
+ * made ("Done for today", three "I'm fine"s) is honoured for at least 4 h, so
+ * 23:50 or 04:30 doesn't suddenly start nudging again.
+ */
 export function rollover(g: NudgeGuard, now = Date.now()): NudgeGuard {
-  if (g.day === dayKey(now)) return g;
-  return { ...freshGuard(now), lastHydrationChipAt: g.lastHydrationChipAt };
+  if (g.day === wakingDayKey(now)) return g;
+  const keepClosed = g.dayClosed && !!g.dayClosedAt && now - g.dayClosedAt < MIN_QUIET_MS;
+  const keepOff = g.offUntilTomorrow && !!g.offAt && now - g.offAt < MIN_QUIET_MS;
+  return {
+    ...freshGuard(now),
+    lastHydrationChipAt: g.lastHydrationChipAt,
+    dayClosed: keepClosed,
+    dayClosedAt: keepClosed ? g.dayClosedAt : undefined,
+    offUntilTomorrow: keepOff,
+    offAt: keepOff ? g.offAt : undefined,
+  };
+}
+
+/** "Done for today": quiet until the user starts a session themselves (or the rollover after ≥ 4 h). */
+export function markDayClosed(g: NudgeGuard, now = Date.now()): NudgeGuard {
+  return { ...rollover(g, now), dayClosed: true, dayClosedAt: now };
+}
+
+/** The user opened Nudge and started something: they chose to come back. */
+export function markSessionStarted(g: NudgeGuard, now = Date.now()): NudgeGuard {
+  return { ...rollover(g, now), dayClosed: false, dayClosedAt: undefined };
 }
 
 export function isLearning(s: Settings, now = Date.now()): boolean {
@@ -89,7 +116,13 @@ export function markDismissed(g0: NudgeGuard, now = Date.now()): { guard: NudgeG
   const dismissals = g.dismissalsToday + 1;
   const turnedOff = dismissals >= MAX_DISMISSALS_PER_DAY;
   return {
-    guard: { ...g, dismissalsToday: dismissals, cooldownMin: g.cooldownMin * 2, offUntilTomorrow: g.offUntilTomorrow || turnedOff },
+    guard: {
+      ...g,
+      dismissalsToday: dismissals,
+      cooldownMin: g.cooldownMin * 2,
+      offUntilTomorrow: g.offUntilTomorrow || turnedOff,
+      offAt: turnedOff && !g.offUntilTomorrow ? now : g.offAt,
+    },
     turnedOff,
   };
 }

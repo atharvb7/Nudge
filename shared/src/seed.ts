@@ -2,7 +2,7 @@ import { defaultStorage } from './defaults';
 import { freshGuard } from './guard';
 import { STRATEGY_BY_ID } from './strategies';
 import type { CheckIn, Inference, PlanItem, StorageShape, StrategyStats, Win } from './types';
-import { DAY, HOUR, MIN, dayKey, seededRandom } from './util';
+import { DAY, HOUR, MIN, dayKey, seededRandom, wakingDayKey } from './util';
 
 // Preloaded 1-week history for demo / judging, so personal learning,
 // "What works for me" and "What I noticed" look real. Deterministic.
@@ -121,7 +121,7 @@ export function seedDemoData(now = Date.now(), seed = 7): StorageShape {
     checkins,
     inferences: inferences.sort((a, b) => a.t - b.t),
     plan,
-    energyToday: { day: dayKey(now), energy: 3 },
+    energyToday: { day: wakingDayKey(now), energy: 3 },
     notes: [
       {
         t: day(5, 23, 10),

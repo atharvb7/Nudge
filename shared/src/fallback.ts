@@ -1,4 +1,4 @@
-import { CELEBRATIONS, OPENERS, VALIDATIONS, fillTask, looksLikeFeeling, pick, softenCopy, findBannedWords } from './copy';
+import { CELEBRATIONS, OPENERS, VALIDATIONS, cleanTabTitle, fillTask, isSafeTaskLabel, looksLikeFeeling, pick, softenCopy, findBannedWords, taskKind, taskLabel, type TaskKindName } from './copy';
 import { detectCrisis, safetyPayload } from './crisis';
 import { STRATEGIES, STRATEGY_BY_ID } from './strategies';
 import type {
@@ -48,17 +48,39 @@ function similarity(card: StrategyCard, text: string): number {
   return Math.min(1, 0.3 + hit / Math.max(3, q.size));
 }
 
+/** Steps that only make sense for something you open on a screen ("Open {task}", "the title of {task}"). */
+const SCREEN_ONLY = /\b(open|skim|scroll|highlight|title of|copy the|rubric|paragraph of|font|window)\b[^.]*\{task\}|\{task\}[^.]*\b(into its own window|at the top of the page|looks)\b/i;
+
+/** Does this card fit this kind of task? (docs/ARCHITECTURE.md "Task kinds") */
+export function cardFitsKind(c: StrategyCard, kind: TaskKindName, task = ''): boolean {
+  const kinds = (c.task_kinds ?? ['any']) as string[];
+  if (kind === 'unknown') return kinds.includes('any') || kinds.some((k) => k !== 'message' && k !== 'chore');
+  if (!kinds.includes('any') && !kinds.includes(kind)) return false;
+  // a call or a chore can't be "opened": skip screen-only wording even on general cards
+  const callish = kind === 'message' && /^(call|ring|phone)\b/i.test(task.trim());
+  if ((kind === 'chore' || callish) && SCREEN_ONLY.test(c.steps[0])) return false;
+  return true;
+}
+
+/** What the task is about: the user's words if they name one safely, else the cleaned tab title. */
+function taskText(req: SequenceRequest): string {
+  return isSafeTaskLabel(req.task) ? req.task : cleanTabTitle(req.task_tab_title);
+}
+
 export function rankCards(req: SequenceRequest, rand: () => number = Math.random): StrategyCard[] {
   const used = new Set(req.history.map((h) => h.strategy_id));
   const exclude = new Set(req.exclude_ids ?? []);
   if (req.action === 'different' || req.action === 'too_big') used.forEach((id) => exclude.add(id));
   const state = req.state === 'neutral' ? 'stuck' : req.state;
   const personal = new Map(req.top_strategies.map((s) => [s.id, s.score]));
-  const text = `${req.task} ${req.transcript ?? ''}`;
+  const named = taskText(req);
+  const kind = taskKind(named);
+  const text = `${named} ${req.transcript ?? ''}`;
 
   const filter = (strictState: boolean) =>
     STRATEGIES.filter((c) => {
       if (exclude.has(c.id)) return false;
+      if (!cardFitsKind(c, kind, named)) return false;
       if (c.id === 'brain_dump') return false; // brain dump is its own button
       if (c.min_energy > req.energy) return false;
       if (req.energy <= 2 && c.size !== 'tiny') return false;
@@ -67,13 +89,16 @@ export function rankCards(req: SequenceRequest, rand: () => number = Math.random
     });
   let pool = filter(true);
   if (!pool.length) pool = filter(false);
-  if (!pool.length) pool = STRATEGIES.filter((c) => c.min_energy <= 1 && c.size === 'tiny');
+  if (!pool.length) pool = STRATEGIES.filter((c) => c.min_energy <= 1 && c.size === 'tiny' && cardFitsKind(c, kind, named));
+  if (!pool.length) pool = STRATEGIES.filter((c) => c.min_energy <= 1 && c.size === 'tiny' && (c.task_kinds ?? ['any']).includes('any'));
 
   const scored = pool.map((c) => {
     let s = similarity(c, text) * (personal.get(c.id) ?? 0.5);
     if (req.energy <= 1 && (c.is_rest || c.modality === 'sensory' || c.modality === 'rest')) s *= 1.6;
     if (req.state === 'overwhelmed' && /overwhelm|sensory|calm|choice|self-compassion/.test(c.tags.join(' '))) s *= 1.4;
-    if (req.energy >= 3 && c.is_rest) s *= 0.4; // don't push rest on someone with energy, but keep it possible
+    if (req.energy >= 3 && c.is_rest && req.state !== 'depleted') s *= 0.4; // don't push rest on someone with energy, but keep it possible
+    if (req.state === 'depleted' && (c.is_rest || c.modality === 'rest' || c.modality === 'body')) s *= 1.8; // depleted: rest first
+    if (kind !== 'unknown' && (c.task_kinds ?? []).includes(kind as never)) s *= 1.3; // made for this kind of task
     s *= 0.9 + rand() * 0.2; // gentle jitter so ties rotate
     return { c, s };
   });
@@ -81,9 +106,9 @@ export function rankCards(req: SequenceRequest, rand: () => number = Math.random
 }
 
 /** Words that mean "this is a lot right now" → validate first, in one sentence. */
-export const OVERWHELM = /\b(overwhelm\w*|too much|can['’]?t do|can['’]?t even|so much|everything|killing me|so hard|ugh+|hate this|drowning|piling up|stressed|panic\w*)\b/i;
+export const OVERWHELM = /\b(overwhelm\w*|too much|can['’]?t do|can['’]?t even|can['’]?t (?:start|begin|focus|get started)|so much|everything|killing me|so hard|ugh+|argh+|hate this|drowning|piling up|stressed|panic\w*)\b/i;
 
-const SMALLEST = ['just_open_it', 'one_percent', 'first_physical_action', 'write_the_title', 'read_one_paragraph', 'set_up_space'];
+const SMALLEST = ['just_open_it', 'one_item_only', 'first_line_only', 'one_percent', 'first_physical_action', 'write_the_title', 'read_one_paragraph', 'gather_what_you_need', 'set_up_space'];
 
 function stepText(card: StrategyCard, i: number, style: WordingStyle): string {
   const list = style === 'literal' ? card.literal_version : card.steps;
@@ -134,24 +159,37 @@ export function localSequence(req: SequenceRequest, region: Region = 'IN', rand:
     }
   }
 
+  const named = taskText(req);
+  const kind = taskKind(named);
   if (!card && req.action === 'smaller') {
     const used = new Set(req.history.map((h) => h.strategy_id));
-    const id = SMALLEST.find((s) => !used.has(s) && (STRATEGY_BY_ID[s]?.min_energy ?? 9) <= Math.max(1, req.energy)) ?? 'just_open_it';
+    const fits = (id: string) => {
+      const c = STRATEGY_BY_ID[id];
+      return !!c && !used.has(id) && c.min_energy <= Math.max(1, req.energy) && cardFitsKind(c, kind, named);
+    };
+    const id = SMALLEST.find(fits) ?? SMALLEST.find((x) => STRATEGY_BY_ID[x] && cardFitsKind(STRATEGY_BY_ID[x], kind, named)) ?? 'one_percent';
     card = STRATEGY_BY_ID[id];
-    prefix = req.wording_style === 'literal' ? '' : 'Even smaller: ';
+    // said as a lead ("Even smaller, then."), never glued onto a step that may be a question
+    prefix = req.wording_style === 'literal' ? '' : 'Even smaller, then.';
   }
 
   if (!card) card = rankCards(req, rand)[0];
 
   const rotation = req.history.length + Math.floor(rand() * 3);
-  let next = fillTask(stepText(card, index, req.wording_style), req.task, req.task_tab_title, req.wording_style);
-  if (prefix) next = prefix + next.charAt(0).toLowerCase() + next.slice(1);
+  const taskForText = isSafeTaskLabel(req.task) ? req.task : '';
+  let next = fillTask(stepText(card, index, req.wording_style), taskForText, cleanTabTitle(req.task_tab_title) || undefined, req.wording_style);
   if (findBannedWords(next).length) next = softenCopy(next);
 
+  const depleted = req.state === 'depleted';
   const overwhelmed = req.state === 'overwhelmed' || OVERWHELM.test(`${req.transcript ?? ''} ${looksLikeFeeling(req.task) ? req.task : ''}`);
+  const restLead =
+    req.wording_style === 'literal'
+      ? 'You have been working for a long time. Resting is a good option. If you want one small step instead:'
+      : "You've been at it a while — resting is a real option. If you'd still like one tiny thing:";
+  const lead = depleted ? restLead : prefix || leadFor(card, { ...req, task: taskForText }, rotation);
   return {
     mode: 'coach',
-    lead: leadFor(card, req, rotation),
+    lead,
     next_step: next,
     why_one_line: card.why_it_works,
     size: req.energy <= 2 ? 'tiny' : card.size,
@@ -159,7 +197,7 @@ export function localSequence(req: SequenceRequest, region: Region = 'IN', rand:
     strategy_id: card.id,
     strategy_name: card.name,
     validation: overwhelmed ? pick(VALIDATIONS, rotation) : null,
-    suggest_rest: req.energy <= 1 || (req.energy <= 2 && req.action === 'too_big') || !!card.is_rest,
+    suggest_rest: depleted || req.energy <= 1 || (req.energy <= 2 && req.action === 'too_big') || !!card.is_rest,
     source: 'card',
     safety: null,
   };
@@ -219,11 +257,17 @@ function itemKey(s: string): string {
   return s.toLowerCase().replace(/\b(the|a|an|my|our|this|that)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+/** Filler that isn't a task at all. */
+const FILLER = /^(?:idk|i\s+dunno|dunno|i\s+don['’]?t\s+know|lol|lmao|whatever|stuff|things|etc|and\s+stuff|yeah|ok(?:ay)?|hmm+|um+|uh+|so\s+yeah|like|you\s+know|i\s+guess|nothing|idek)[.!?]*$/i;
+
 export function splitDump(text: string): string[] {
   return text
+    // numbered / bulleted lists: "1. ML quiz 2. resume", "- laundry", "(3) email prof"
+    .replace(/(?:^|\s)\(?\d{1,2}[.):]\s+/g, '\n')
+    .replace(/(?:^|\s)[-*•–]\s+/g, '\n')
     .split(/\n|[,;•]|\.\s|\balso\b|\band then\b|\bplus\b|\band\b(?=\s+(?:i|need|have|gotta|got|to|the|my|haven'?t|mum|mom|dad)\b)/i)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 2);
+    .map((s) => s.trim().replace(/\s+(?:idk|lol|lmao|and\s+stuff|or\s+something|etc)\.?$/i, '').trim())
+    .filter((s) => s.length > 2 && !FILLER.test(s));
 }
 
 /** Split, drop feeling-only fragments, tidy each item and remove near-duplicates. */
@@ -246,7 +290,23 @@ export function dumpItems(text: string): { items: string[]; feelings: string[] }
   return { items, feelings };
 }
 
-export function localBrainDump(transcript: string, style: WordingStyle, region: Region = 'IN'): BrainDumpResponse & { validation?: string | null } {
+const UNI_KINDS: TaskKindName[] = ['doc', 'reading', 'study', 'code'];
+
+/** A first step that fits what the item is (you can't "open" laundry or a phone call). */
+export function firstStepFor(item: string, style: WordingStyle): string {
+  const kind = taskKind(item);
+  const name = taskLabel(item);
+  const lit = style === 'literal';
+  if (kind === 'message' && /^(call|ring|phone)\b/i.test(item)) {
+    return lit ? `Write three words you want to say during ${name}.` : `Jot three words you want to say on ${name}. That's your whole script.`;
+  }
+  if (kind === 'message') return lit ? `Open a new message and type only the greeting for ${name}.` : `Write just the first line of ${name} — "Hi," counts.`;
+  if (kind === 'chore') return lit ? `Do one item of "${item}". Then stop or continue.` : `Do just one item of "${item}" — one dish, one sock. That's the whole first step.`;
+  if (kind === 'admin') return lit ? `Gather what you need for "${item}" in one place. Do not start yet.` : `Just gather what "${item}" needs into one spot. Starting can wait.`;
+  return lit ? `Open what you need for "${item}". Do only that.` : `Just open whatever "${item}" lives in. That's the whole first step.`;
+}
+
+export function localBrainDump(transcript: string, style: WordingStyle, region: Region = 'IN', energy = 3): BrainDumpResponse & { validation?: string | null } {
   const level = detectCrisis(transcript);
   if (level !== 'none') {
     return { mode: 'safety', groups: [], pick: null, alternatives: [], source: 'card', safety: safetyPayload(region, level) };
@@ -261,13 +321,18 @@ export function localBrainDump(transcript: string, style: WordingStyle, region: 
   if (!items.length) return { mode: 'coach', groups: [], pick: null, alternatives: [], source: 'card', safety: null, validation };
   // Pick something concrete and quick: an action verb first, quick verbs next, then the shortest.
   const quick = /\b(email|reply|text|call|pay|book|send|open|print|submit|message|form)\b/i;
-  const score = (s: string) => (ACTION.test(s) ? 2 : 0) + (quick.test(s) ? 1 : 0);
+  // uni items come first unless energy is low — a chore isn't "the quickest" just because it's short
+  const score = (s: string) => {
+    const k = taskKind(s);
+    let v = (ACTION.test(s) ? 2 : 0) + (quick.test(s) ? 1 : 0);
+    if (energy > 2 && UNI_KINDS.includes(k)) v += 2;
+    if (energy > 2 && k === 'chore') v -= 2;
+    if (energy <= 2 && (k === 'chore' || k === 'message')) v += 1;
+    return v;
+  };
   const ranked = [...items].sort((a, b) => score(b) - score(a) || a.length - b.length);
   const chosen = ranked[0];
-  const first =
-    style === 'literal'
-      ? `Open what you need for "${chosen}". Do only that.`
-      : `Just open whatever "${chosen}" lives in. That's the whole first step.`;
+  const first = firstStepFor(chosen, style);
   return {
     mode: 'coach',
     groups: Array.from(groups.entries()).map(([label, its]) => ({ label, items: its })),

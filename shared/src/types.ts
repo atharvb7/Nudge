@@ -171,7 +171,10 @@ export interface NudgeGuard {
   cooldownMin: number; // starts 20, doubles per "I'm fine"
   dismissalsToday: number;
   offUntilTomorrow: boolean;
-  dayClosed: boolean; // "Done for today" — no nudges until next session
+  /** when the third dismissal happened (offUntilTomorrow lasts ≥ 4 h, through the 05:00 rollover) */
+  offAt?: number;
+  dayClosed: boolean; // "Done for today" — no nudges until the user starts a new session
+  dayClosedAt?: number;
   lastHydrationChipAt: number;
   lastTimeAnchorAt: number;
   /** identity (start time) of the step whose "still going?" chip was already shown */

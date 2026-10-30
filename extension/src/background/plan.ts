@@ -6,7 +6,7 @@ import {
   canShowChip,
   computeBaseline,
   computeWindow,
-  dayKey,
+  wakingDayKey,
   detectRestuck,
   inferState,
   isLearning,
@@ -108,7 +108,7 @@ export function planTick(env: TickEnv): TickPlan {
 
   // a break nobody came back from shouldn't silence Nudge forever
   let breakState = store.breakState;
-  if (breakState && (now - breakState.startedAt > breakState.plannedMin * MIN + STALE_BREAK_MS || dayKey(breakState.startedAt) !== dayKey(now))) {
+  if (breakState && (now - breakState.startedAt > breakState.plannedMin * MIN + STALE_BREAK_MS || wakingDayKey(breakState.startedAt) !== wakingDayKey(now))) {
     breakState = null;
     patch.breakState = null;
   }
@@ -206,7 +206,7 @@ export function planTick(env: TickEnv): TickPlan {
   }
 
   // 6. learning mode: one gentle 1-tap check-in per day, in the evening
-  const today = dayKey(now);
+  const today = wakingDayKey(now);
   if (
     !overlay &&
     learning &&

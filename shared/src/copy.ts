@@ -207,7 +207,6 @@ export function pick<T>(xs: T[], index: number): T {
   return xs[((index % xs.length) + xs.length) % xs.length];
 }
 
-/** Replace {task} placeholders. Literal mode prefers the exact object name. */
 const FEELING = /\b(i['’]?m|i am|i feel|feeling|killing me|stuck|can['’]?t|cannot|overwhelm\w*|tired|exhausted|hate|ugh|so much|too much)\b/i;
 
 /** "this assignment is killing me" is a feeling, not a task name to quote back. */
@@ -216,14 +215,115 @@ export function looksLikeFeeling(text: string): boolean {
   return !!t && (t.length > 70 || t.split(/\s+/).length > 10 || FEELING.test(t));
 }
 
+/**
+ * Words that must never end up as a task name, even when the crisis check
+ * misses the sentence ("I want to end it" must never become "your I want to end it").
+ */
+const NOT_A_TASK = /\b(end\s+it|ending|die|dying|dead|death|kill\w*|hurt\w*|harm\w*|pills?|overdos\w*|jump\w*|cut(?:ting)?|disappear\w*|burden|worthless|useless|hopeless|pointless|empty|alone|life|living|alive|exist\w*|suicid\w*|hang\w*|bridge|rope|gone|anymore|nobody|no\s+one|myself|my\s*self|hate\s+me|tired\s+of|done\s+with)\b/i;
+
+/** A short, neutral name for a task — or false. Long sentences, feelings and anything worrying never qualify. */
+export function isSafeTaskLabel(text: string): boolean {
+  const t = (text || '').trim();
+  if (!t || t.length > 60 || t.split(/\s+/).length > 8) return false;
+  if (looksLikeFeeling(t) || NOT_A_TASK.test(t)) return false;
+  return /[a-z0-9]/i.test(t);
+}
+
+/** Strip browser/app noise from a tab title ("Essay - Google Docs" → "Essay"; "Untitled document" → ""). */
+export function cleanTabTitle(title: string | null | undefined): string {
+  let t = (title || '').trim();
+  t = t.replace(/^\(\d+\)\s+/, '');
+  t = t.replace(/^(Google\s+(Docs|Sheets|Slides|Drive)|Microsoft\s+(Word|Excel|PowerPoint)|Notion|Overleaf)\s+[-–—|:]\s+/i, '');
+  for (let i = 0; i < 2; i++) {
+    t = t
+      .replace(/\s+[-–—|]\s+(Google\s+(Docs|Sheets|Slides|Drive)|Microsoft\s+(Word|Excel|PowerPoint)|Word|Excel|PowerPoint|Notion|YouTube|Mozilla Firefox|Google Chrome)\s*$/i, '')
+      .replace(/\s+[-–—|]\s+Overleaf.*$/i, '')
+      .trim();
+  }
+  if (/^(untitled\s+(document|spreadsheet|presentation|form)|new tab|untitled)$/i.test(t)) return '';
+  return t;
+}
+
+export type TaskKindName = 'doc' | 'reading' | 'study' | 'code' | 'admin' | 'message' | 'chore' | 'unknown';
+
+const KIND_RULES: Array<[Exclude<TaskKindName, 'unknown' | 'reading'> | 'reading', RegExp]> = [
+  ['message', /\b(email|e-mail|mail|text|message|reply|call|ring|whatsapp|dm|ping|phone)\b/i],
+  ['chore', /\b(laundry|clean|dishes|wash|tidy|cook|groceries|shopping|trash|vacuum|room|shower|iron|fold|bed)\b/i],
+  ['admin', /\b(pay|fees?|bill|form|bank|apply|application|register|book|appointment|renew|passport|scholarship)\b/i],
+  ['code', /\b(code|coding|bug|debug|program|script|leetcode|github|function|compile)\b/i],
+  ['reading', /\b(read|reading|chapter|article|textbook)\b/i],
+  ['study', /\b(study|revise|revision|exam|quiz|test|flashcards|lecture|practice)\b/i],
+  ['doc', /\b(essay|write|writing|report|assignment|draft|thesis|presentation|slides|doc|document|resume|cv|letter)\b/i],
+];
+
+/** Which kind of task this is (see docs/ARCHITECTURE.md "Task kinds"). */
+export function taskKind(text: string): TaskKindName {
+  const t = (text || '').replace(/[_]/g, ' ');
+  for (const [kind, re] of KIND_RULES) if (re.test(t)) return kind;
+  if (/\.pdf\b/i.test(t)) return 'reading';
+  return 'unknown';
+}
+
+const MESSAGE_VERB = /^(email|e-mail|mail|text|message|whatsapp|dm|ping|reply(?:\s+to)?|call|ring|phone)\s+(.+)$/i;
+const LEADING_VERB = /^(?:finish|do|start|write|read|study|revise|review|clean|tidy|wash|pay|fill(?:\s+in|\s+out)?|submit|complete|prepare|make|work\s+on)\s+(.+)$/i;
+
+/** A name that reads naturally after "Open …", "the first line of …" ("call mom" → "the call with mom"). */
+export function taskLabel(task: string): string {
+  const t = task.trim().replace(/[.!?]+$/, '');
+  const m = t.match(MESSAGE_VERB);
+  if (m) {
+    const verb = m[1].toLowerCase();
+    const who = m[2].replace(/^(to|with)\s+/i, '');
+    if (/^(call|ring|phone)/.test(verb)) return `the call with ${who}`;
+    if (/^(email|e-mail|mail)/.test(verb)) return `the email to ${who}`;
+    if (/^reply/.test(verb)) return `the reply to ${who}`;
+    return `the message to ${who}`;
+  }
+  const v = t.match(LEADING_VERB);
+  return v ? v[1] : t;
+}
+
+/**
+ * Pull the task out of a feeling sentence: "ugh I can't start my essay" →
+ * "essay". Returns '' when no safe task name is in there.
+ */
+export function extractTask(text: string): string {
+  const t = (text || '').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  if (isSafeTaskLabel(t)) return t;
+  const patterns = [
+    /\b(?:can['’]?t|cannot|don['’]?t want to|need to|have to|gotta|trying to|want to|supposed to|struggling to)\s+(?:even\s+)?(?:start(?:ing)?|begin|do|finish|write|read|study(?:\s+for)?|revise(?:\s+for)?|focus on|work on|get (?:to|into)|deal with|face|open)\s+(?:on\s+)?(?:my|the|this|that|our|an?)?\s*([a-z0-9][\w'’ -]{1,48}?)\s*(?=$|[.,!?;]|\s+(?:because|but|and|cause|cuz|lol|rn|right now|today|tonight|at all|anymore)\b)/i,
+    /\bstuck\s+(?:on|with)\s+(?:my|the|this|that)?\s*([a-z0-9][\w'’ -]{1,48}?)\s*(?=$|[.,!?;]|\s+(?:because|but|and|lol)\b)/i,
+    /\b(?:my|the|this)\s+([a-z0-9][\w'’ -]{1,40}?)\s+is\s+(?:killing me|so hard|too much|impossible|so boring|a lot)\b/i,
+  ];
+  for (const re of patterns) {
+    const m = t.match(re);
+    const cand = m?.[1]?.trim().replace(/^(?:my|the|this|that)\s+/i, '');
+    if (cand && !/^(it|this|that|anything|everything|things|stuff|at all|any of it|work)$/i.test(cand) && isSafeTaskLabel(cand)) return cand;
+  }
+  return '';
+}
+
+/** Replace {task} placeholders. Literal mode prefers the exact object name when it's the same task. */
 export function fillTask(text: string, task: string, taskTabTitle: string | undefined, style: WordingStyle): string {
-  const concrete = (taskTabTitle || '').trim();
-  let said = looksLikeFeeling(task) ? '' : (task || '').trim();
+  const concrete = cleanTabTitle(taskTabTitle);
+  let said = isSafeTaskLabel(task) ? (task || '').trim() : '';
   // the chip and the tab title are the same thing: use it once, as a name
   if (said && concrete && said.toLowerCase() === concrete.toLowerCase()) said = concrete;
   said = said.replace(/^your\s+(?=\S*[_.])/i, '');
+  const related = (a: string, b: string) =>
+    a.toLowerCase().split(/[\s_.-]+/).some((w) => w.length >= 3 && b.toLowerCase().includes(w));
   let label: string;
-  if (style === 'literal') label = concrete || said || 'your task';
-  else label = said || concrete || 'your task';
-  return text.replace(/\{task\}/g, label);
+  if (said && concrete && style === 'literal' && related(said, concrete)) label = concrete;
+  else if (said) label = taskLabel(said);
+  else label = concrete || (style === 'literal' ? 'your task' : 'your task');
+  // grammar: "the finished {task}" with "your essay" → "the finished essay", never "the finished your essay"
+  const bare = label.replace(/^(?:your|the)\s+/i, '');
+  let out = text
+    .replace(/(\b(?:the|a|an|this|that)(?:\s+finished)?\s+)\{task\}/gi, (_m, pre: string) => pre + bare)
+    .replace(/\{task\}/g, label)
+    .replace(/\byour\s+your\b/gi, 'your');
+  // sentence starts stay capitalised
+  out = out.replace(/(^|[.!?]\s+)([a-z])/g, (_m, p: string, c: string) => p + c.toUpperCase());
+  return out;
 }

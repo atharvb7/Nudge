@@ -3,7 +3,9 @@ import {
   ELSEWHERE_HOST,
   type RawEvent,
   applyBridgeRequest,
-  dayKey,
+  wakingDayKey,
+  markDayClosed,
+  markSessionStarted,
   defaultStorage,
   hostOf,
   isCallHost,
@@ -328,11 +330,11 @@ async function handle(msg: ToBackground, sender: chrome.runtime.MessageSender, o
       await setSession({ stepStartedAt: null });
       return { ok: true };
     case 'guardDayClosed':
-      await mutate('guard', (g) => ({ ...rollover(g, now), dayClosed: true }));
+      await mutate('guard', (g) => markDayClosed(g, now));
       await setSession({ stepStartedAt: null });
       return { ok: true };
     case 'newSession':
-      await mutate('guard', (g) => ({ ...rollover(g, now), dayClosed: false }));
+      await mutate('guard', (g) => markSessionStarted(g, now));
       return { ok: true };
     case 'panelHeartbeat':
       await setSession({ panelOpenUntil: now + 45_000 });
@@ -401,7 +403,7 @@ async function overlayAction(
       return { ok: true };
     case 'checkin': {
       const feeling = (value ?? 3) as 1 | 2 | 3 | 4 | 5;
-      const day = dayKey(now);
+      const day = wakingDayKey(now);
       await setKeys({
         checkins: [...store.checkins.filter((c) => c.day !== day), { t: now, day, feeling }],
         wins: [...store.wins, { id: uid('w_'), t: now, kind: 'checkin', label: 'Checked in with myself' }],

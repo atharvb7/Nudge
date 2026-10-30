@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import { COPY, dayKey, reshufflePlan, type Energy, type PlanItem } from '@nudge/shared';
+import { COPY, wakingDayKey, reshufflePlan, type Energy, type PlanItem } from '@nudge/shared';
 import { useNudge } from '@/lib/nudge-context';
 import { EnergyDial } from '@/components/EnergyDial';
 import { Card, EmptyState, PageHeader, PageSkeleton, Pill, formatDay } from '@/components/ui';
@@ -138,7 +138,7 @@ export default function TodayPage() {
   const [showLater, setShowLater] = useState(false);
   const [announce, setAnnounce] = useState('');
 
-  const today = dayKey();
+  const today = wakingDayKey();
   const energy = snapshot?.energyToday && snapshot.energyToday.day === today ? snapshot.energyToday.energy : null;
   const plan = useMemo(() => snapshot?.plan ?? [], [snapshot?.plan]);
   const shuffle = useMemo(() => (energy ? reshufflePlan(plan, energy) : null), [plan, energy]);

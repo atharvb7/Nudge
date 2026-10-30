@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   STRATEGIES,
   STRATEGY_BY_ID,
-  dayKey,
+  wakingDayKey,
   looksLikeFeeling,
   thompsonScores,
   type ActionButton,
@@ -81,11 +81,11 @@ export function App() {
     booted.current = true;
     sessionRef.current = store.session;
     // energy: today's choice, else a gentle 2 late at night, else whatever was chosen last
-    if (store.energyToday?.day === dayKey()) setEnergyState(store.energyToday.energy);
+    if (store.energyToday?.day === wakingDayKey()) setEnergyState(store.energyToday.energy);
     else if (new Date().getHours() >= 22 || new Date().getHours() < 5) setEnergyState(2);
     else if (store.energyToday) setEnergyState(store.energyToday.energy);
     const br = store.breakState;
-    const staleBreak = !!br && (Date.now() - (br.startedAt + br.plannedMin * 60_000) > 2 * 3_600_000 || dayKey(br.startedAt) !== dayKey());
+    const staleBreak = !!br && (Date.now() - (br.startedAt + br.plannedMin * 60_000) > 2 * 3_600_000 || wakingDayKey(br.startedAt) !== wakingDayKey());
     if (staleBreak) {
       // a break from long ago is just… over. Welcome back, zero guilt.
       void mutate('breakState', () => null);
@@ -384,7 +384,7 @@ export function App() {
             setDump(null);
             setScreen('braindump');
           }}
-          todayWins={store.wins.filter((w) => dayKey(w.t) === dayKey())}
+          todayWins={store.wins.filter((w) => wakingDayKey(w.t) === wakingDayKey())}
         />
       ) : (
         <Loading text={loadingText} />
