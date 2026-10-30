@@ -264,24 +264,42 @@ export function taskKind(text: string): TaskKindName {
   return 'unknown';
 }
 
-const MESSAGE_VERB = /^(email|e-mail|mail|text|message|whatsapp|dm|ping|reply(?:\s+to)?|call|ring|phone)\s+(.+)$/i;
-const LEADING_VERB = /^(?:finish|do|start|write|read|study|revise|review|clean|tidy|wash|pay|fill(?:\s+in|\s+out)?|submit|complete|prepare|make|work\s+on)\s+(.+)$/i;
+// Noun phrases — mirrors noun_phrase() in backend/app/taskkind.py.
+const STRIP_VERBS = /^(?:(?:i\s+)?(?:need|have|want|gotta|got)\s+to\s+)?(?:do|finish|start|complete|get|work\s+on|get\s+started\s+on|begin|continue|write|make|prepare|submit|draft|study\s+for|revise\s+for|revise|study|read|practice|practise|fix|debug)\s+/i;
+const MSG = /^(?:email|e-mail|mail|text|message|whatsapp|dm|ping)\s+(?:to\s+)?(.+)$/i;
+const REPLY = /^reply\s+(?:to\s+)?(.+)$/i;
+const CALL = /^(?:call|ring|phone)\s+(?:back\s+)?(.+?)(?:\s+back)?$/i;
+const CHORE = /^(?:do|clean|tidy|wash|fold|iron|cook|vacuum|take\s+out|buy|get)\s+(?:up\s+)?(.+)$/i;
+const ADMIN = /^(?:pay|fill(?:\s+out|\s+in)?|book|renew|apply\s+for|register\s+for|submit)\s+(.+)$/i;
+const DETERMINER = /^(?:my|your|the|a|an|this|that|our|his|her|their)\b/i;
 
-/** A name that reads naturally after "Open …", "the first line of …" ("call mom" → "the call with mom"). */
-export function taskLabel(task: string): string {
-  const t = task.trim().replace(/[.!?]+$/, '');
-  const m = t.match(MESSAGE_VERB);
-  if (m) {
-    const verb = m[1].toLowerCase();
-    const who = m[2].replace(/^(to|with)\s+/i, '');
-    if (/^(call|ring|phone)/.test(verb)) return `the call with ${who}`;
-    if (/^(email|e-mail|mail)/.test(verb)) return `the email to ${who}`;
-    if (/^reply/.test(verb)) return `the reply to ${who}`;
-    return `the message to ${who}`;
-  }
-  const v = t.match(LEADING_VERB);
-  return v ? v[1] : t;
+function you(s: string): string {
+  return s.replace(/\bmy\b/gi, 'your').replace(/\bmyself\b/gi, 'yourself').replace(/\bme\b/gi, 'you');
 }
+
+function withDet(obj: string, def = 'your'): string {
+  const o = you(obj.trim().replace(/[.!?]+$/, ''));
+  if (DETERMINER.test(o)) return o.charAt(0).toLowerCase() + o.slice(1);
+  if (o.includes('_') || /\.\w{2,5}$/.test(o)) return o;
+  return `${def} ${o}`;
+}
+
+/** "call mom" → "your call with mom"; "do laundry" → "the laundry"; "write my essay" → "your essay". */
+export function nounPhrase(task: string, kind: TaskKindName = taskKind(task)): string {
+  const t = task.replace(/\s+/g, ' ').trim().replace(/[.!?]+$/, '');
+  if (!t) return '';
+  let m: RegExpMatchArray | null;
+  if ((m = t.match(MSG))) return `your message to ${you(m[1])}`;
+  if ((m = t.match(REPLY))) return `your reply to ${you(m[1])}`;
+  if ((m = t.match(CALL))) return `your call with ${you(m[1])}`;
+  if (kind === 'chore' && (m = t.match(CHORE))) return withDet(m[1], 'the');
+  if (kind === 'admin' && (m = t.match(ADMIN))) return withDet(m[1], 'the');
+  const stripped = t.replace(STRIP_VERBS, '');
+  return withDet(stripped, kind === 'chore' ? 'the' : 'your');
+}
+
+/** @deprecated use nounPhrase */
+export const taskLabel = (task: string) => nounPhrase(task);
 
 /**
  * Pull the task out of a feeling sentence: "ugh I can't start my essay" →
@@ -299,38 +317,54 @@ export function extractTask(text: string): string {
   for (const re of patterns) {
     const m = t.match(re);
     const cand = m?.[1]?.trim().replace(/^(?:my|the|this|that)\s+/i, '');
-    if (cand && !/^(it|this|that|anything|everything|things|stuff|at all|any of it|work)$/i.test(cand) && isSafeTaskLabel(cand)) return cand;
+    if (cand && cand.split(/\s+/).length <= 4 && !/^(it|this|that|anything|everything|things|stuff|at all|any of it|work)$/i.test(cand) && isSafeTaskLabel(cand)) return cand;
   }
   return '';
 }
 
-/** "essay" → "your essay"; file names, "the call with mom" and "my notes" stay as they are. */
-function possessive(label: string): string {
-  if (!label || looksLikeFileName(label) || /^(the|a|an|my|your|our|this|that|these|those)\b/i.test(label)) return label;
-  return `your ${label}`;
+const ARTICLE_BEFORE_TASK = /\b(?:the|a|an)\s+((?:finished|whole|first|next|actual)\s+)?\{task\}/gi;
+const LABEL_DET = /^(your|the|my|this|that)\s+(.+)$/i;
+const FILE_RE = /\.(pdf|docx?|pptx?|xlsx?|txt|md|ipynb|py|java|c|cpp|js|ts|csv|odt|key|pages|tex)\b/i;
+
+/**
+ * How to name the task in a step — mirrors task_label() in backend/app/fallback.py.
+ * Never uses text the crisis check flags; a feeling keeps only the task noun inside
+ * it (or nothing); a pinned tab's cleaned title is preferred for anything dug out of a feeling.
+ */
+export function labelFor(rawTask: string, tabTitle: string | undefined, style: WordingStyle): string {
+  const raw = (rawTask || '').replace(/[{}]/g, '').trim();
+  let task = isSafeTaskLabel(raw) ? raw : extractTask(raw);
+  const title = cleanTabTitle(tabTitle);
+  if (title && task && task.toLowerCase() !== raw.replace(/[.!?]+$/, '').toLowerCase()) task = ''; // dug out of a feeling
+  const kind = task ? taskKind(task) : taskKind(title);
+  if (task && title && task.toLowerCase() === title.toLowerCase()) task = '';
+  const untitled = /untitled\s+(document|spreadsheet|presentation)/i.exec(tabTitle ?? '');
+  const fallback = untitled ? `your ${untitled[1] === 'presentation' ? 'slides' : untitled[1]}` : 'your task';
+  if (style === 'literal') {
+    if (task && (kind === 'message' || kind === 'chore' || kind === 'admin')) return nounPhrase(task, kind);
+    if (title) return FILE_RE.test(title) ? `the file ${title}` : title;
+    return task ? nounPhrase(task, kind) : fallback;
+  }
+  if (task) return nounPhrase(task, kind);
+  return title || fallback;
 }
 
-/** Replace {task} placeholders. Literal mode prefers the exact object name when it's the same task. */
-export function fillTask(text: string, task: string, taskTabTitle: string | undefined, style: WordingStyle): string {
-  const concrete = cleanTabTitle(taskTabTitle);
-  let said = isSafeTaskLabel(task) ? (task || '').trim() : '';
-  // the chip and the tab title are the same thing: use it once, as a name
-  if (said && concrete && said.toLowerCase() === concrete.toLowerCase()) said = concrete;
-  said = said.replace(/^your\s+(?=\S*[_.])/i, '');
-  const related = (a: string, b: string) =>
-    a.toLowerCase().split(/[\s_.-]+/).some((w) => w.length >= 3 && b.toLowerCase().includes(w));
-  let label: string;
-  if (said && concrete && style === 'literal' && related(said, concrete)) label = concrete;
-  else if (said) label = possessive(taskLabel(said));
-  else if (concrete) label = possessive(concrete);
-  else label = /untitled\s+(document|spreadsheet|presentation)/i.test(taskTabTitle ?? '') ? `your ${/spreadsheet/i.test(taskTabTitle ?? '') ? 'spreadsheet' : /presentation/i.test(taskTabTitle ?? '') ? 'slides' : 'document'}` : 'your task';
-  // grammar: "the finished {task}" with "your essay" → "the finished essay", never "the finished your essay"
-  const bare = label.replace(/^(?:your|the)\s+/i, '');
-  let out = text
-    .replace(/(\b(?:the|a|an|this|that)(?:\s+finished)?\s+)\{task\}/gi, (_m, pre: string) => pre + bare)
-    .replace(/\{task\}/g, label)
-    .replace(/\byour\s+your\b/gi, 'your');
-  // sentence starts stay capitalised
+/** Put a label into a step, with the grammar repair from backend fill(). */
+export function fillWithLabel(text: string, label: string): string {
+  const m = LABEL_DET.exec(label);
+  let t = text;
+  if (m) {
+    // "the finished {task}" + "your essay" → "your finished essay", never "the finished your essay"
+    const [, det, rest] = m;
+    t = t.replace(ARTICLE_BEFORE_TASK, (_a, adj: string | undefined) => `${det} ${adj ?? ''}${rest}`);
+  }
+  let out = t.replace(/\{task\}/g, label);
+  out = out.replace(/\b(your|the)\s+\1\b/gi, '$1').replace(/\s+([,.!?])/g, '$1');
   out = out.replace(/(^|[.!?]\s+)([a-z])/g, (_m, p: string, c: string) => p + c.toUpperCase());
   return out;
+}
+
+/** Replace {task} placeholders (see labelFor / fillWithLabel). */
+export function fillTask(text: string, task: string, taskTabTitle: string | undefined, style: WordingStyle): string {
+  return fillWithLabel(text, labelFor(task, taskTabTitle, style));
 }
