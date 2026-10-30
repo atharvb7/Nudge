@@ -119,12 +119,14 @@ export function BrainDump({
   result,
   onSubmit,
   onStartWith,
+  onRest,
 }: {
   settings: Settings;
   loading: boolean;
   result: (BrainDumpResponse & { offline: boolean }) | null;
   onSubmit: (text: string) => void;
   onStartWith: (item: string) => void;
+  onRest?: () => void;
 }) {
   const [text, setText] = useState('');
   const [chosen, setChosen] = useState<string | null>(null);
@@ -133,22 +135,12 @@ export function BrainDump({
   if (loading) return <Loading text="Sorting it gently…" />;
 
   if (result && result.pick) {
-    const others = Array.from(new Set([result.pick.item, ...result.alternatives])).filter((x) => x !== pickItem);
+    const others = Array.from(new Set([result.pick.item, ...result.alternatives])).filter((x) => x !== pickItem).slice(0, 3);
+    const total = result.groups.reduce((a, g) => a + g.items.length, 0);
+    const validation = (result as { validation?: string | null }).validation;
     return (
       <div className="stack fade-in">
-        <h1>Here’s what I heard</h1>
-        {result.groups.map((g) => (
-          <section key={g.label} className="card">
-            <h3>{g.label}</h3>
-            <ul className="list" style={{ gap: 4 }}>
-              {g.items.map((i) => (
-                <li key={i} style={{ padding: '8px 12px' }}>
-                  {i}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+        {validation && <p className="validation">{validation}</p>}
         <section className="card soft" aria-live="polite">
           <p className="small muted" style={{ marginBottom: 4 }}>
             Just one to start with:
@@ -164,12 +156,33 @@ export function BrainDump({
             <p className="section-title">Or swap for</p>
             <div className="chips">
               {others.map((o) => (
-                <button key={o} type="button" className="chip-btn" onClick={() => setChosen(o)}>
+                <button key={o} type="button" className="chip-btn" onClick={() => setChosen(o)} title={o}>
                   {o}
                 </button>
               ))}
             </div>
           </>
+        )}
+        <details className="card disclosure">
+          <summary>See everything I heard ({total})</summary>
+          {result.groups.map((g) => (
+            <section key={g.label} className="stack" style={{ gap: 4, marginTop: 10 }}>
+              <h3 style={{ margin: 0 }}>{g.label}</h3>
+              <ul className="list" style={{ gap: 4 }}>
+                {g.items.map((i) => (
+                  <li key={i} style={{ padding: '8px 12px' }}>
+                    {i}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+          <p className="small muted" style={{ marginBottom: 0 }}>All of it is saved for later. Nothing has to happen today.</p>
+        </details>
+        {onRest && (
+          <button type="button" className="link" onClick={onRest}>
+            Rest instead
+          </button>
         )}
         {result.offline && <p className="small muted">Sorted on this device.</p>}
       </div>
@@ -191,6 +204,11 @@ export function BrainDump({
       <button type="button" className="btn primary big" disabled={!text.trim()} onClick={() => onSubmit(text)}>
         Sort it for me
       </button>
+      {onRest && (
+        <button type="button" className="link" onClick={onRest}>
+          Rest instead
+        </button>
+      )}
     </div>
   );
 }
@@ -304,7 +322,19 @@ export function DayClosed({
   );
 }
 
-export function Welcome({ settings, note, onFresh, onPickUp }: { settings: Settings; note: FutureNote | null; onFresh: () => void; onPickUp: (() => void) | null }) {
+export function Welcome({
+  settings,
+  note,
+  onFresh,
+  onPickUp,
+  onRest,
+}: {
+  settings: Settings;
+  note: FutureNote | null;
+  onFresh: () => void;
+  onPickUp: (() => void) | null;
+  onRest?: () => void;
+}) {
   return (
     <div className="stack fade-in">
       <h1>{COPY[settings.wordingStyle].welcomeBack}</h1>
@@ -324,13 +354,37 @@ export function Welcome({ settings, note, onFresh, onPickUp }: { settings: Setti
           Pick up where I left off
         </button>
       )}
+      {onRest && (
+        <button type="button" className="link" onClick={onRest}>
+          Not today — rest instead
+        </button>
+      )}
     </div>
   );
 }
 
 // ───────────── Safety ─────────────
 
-export function Safety({ payload, onBack }: { payload: SafetyPayload; onBack: () => void }) {
+export function Safety({ payload, onBack, onFrustrated }: { payload: SafetyPayload; onBack: () => void; onFrustrated?: () => void }) {
+  const [copied, setCopied] = useState<string | null>(null);
+  const copy = async (phone: string) => {
+    try {
+      await navigator.clipboard.writeText(phone);
+      setCopied(phone);
+    } catch {
+      // older fallback (no clipboard permission needed)
+      const ta = document.createElement('textarea');
+      ta.value = phone;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      setCopied(ok ? phone : null);
+    }
+  };
   return (
     <div className="stack fade-in" role="region" aria-label="Support">
       <section className="card calm">
@@ -345,9 +399,14 @@ export function Safety({ payload, onBack }: { payload: SafetyPayload; onBack: ()
               {r.alt && <div className="small muted">Also: {r.alt}</div>}
             </div>
             {r.phone ? (
-              <a className="btn primary" href={`tel:${r.phone.replace(/[^\d+]/g, '')}`} aria-label={`Call ${r.name} at ${r.phone}`}>
-                {r.phone}
-              </a>
+              <div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
+                <a className="btn primary" href={`tel:${r.phone.replace(/[^\d+]/g, '')}`} aria-label={`Call ${r.name} at ${r.phone}`}>
+                  {r.phone}
+                </a>
+                <button type="button" className="btn soft" onClick={() => void copy(r.phone!)} aria-label={`Copy ${r.name} number ${r.phone}`}>
+                  {copied === r.phone ? 'Copied' : 'Copy'}
+                </button>
+              </div>
             ) : r.url ? (
               <a className="btn primary" href={r.url} target="_blank" rel="noreferrer">
                 Open
@@ -356,10 +415,43 @@ export function Safety({ payload, onBack }: { payload: SafetyPayload; onBack: ()
           </li>
         ))}
       </ul>
+      <p role="status" className="sr-only">
+        {copied ? `Number ${copied} copied` : ''}
+      </p>
       <p>{TRUSTED_PERSON_LINE}</p>
       <p className="small muted">Nothing you typed or said here was saved.</p>
+      {payload.level === 'concern' && onFrustrated && (
+        <button type="button" className="btn soft" onClick={onFrustrated}>
+          I’m safe — just really frustrated
+        </button>
+      )}
       <button type="button" className="link" onClick={onBack}>
         Back to Nudge
+      </button>
+    </div>
+  );
+}
+
+/** "I'm safe — just really frustrated": believe them, validate, offer rest. */
+export function Frustrated({ settings, onRest, onHome, onSupport }: { settings: Settings; onRest: () => void; onHome: () => void; onSupport: () => void }) {
+  return (
+    <div className="stack fade-in">
+      <section className="card soft">
+        <p style={{ margin: 0, fontSize: '1.05rem' }}>
+          {settings.wordingStyle === 'literal'
+            ? 'Thank you for telling me. Being frustrated with a task is understandable.'
+            : 'Thank you for telling me. That much frustration makes total sense — this stuff is genuinely hard.'}
+        </p>
+      </section>
+      <p className="muted">A break might help more than another step right now. Both are okay.</p>
+      <button type="button" className="btn primary big" onClick={onRest}>
+        Take a break
+      </button>
+      <button type="button" className="btn ghost" onClick={onHome}>
+        Back to start
+      </button>
+      <button type="button" className="link" onClick={onSupport}>
+        Show the support lines again
       </button>
     </div>
   );

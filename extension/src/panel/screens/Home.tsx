@@ -96,7 +96,7 @@ export function Home({
         </div>
       )}
 
-      <EnergyPicker value={energy} onChange={onEnergy} />
+      <EnergyPicker value={energy} onChange={onEnergy} style={s.wordingStyle} />
 
       <button type="button" className="btn primary big block" onClick={() => start()}>
         {copy.nudgeHelp}

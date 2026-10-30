@@ -30,40 +30,48 @@ import { OVERLAY_CSS } from './overlay-css';
     }
   };
 
-  const send = (msg: ToBackground): Promise<unknown> => {
-    if (!alive()) return Promise.resolve(null);
-    try {
-      return chrome.runtime.sendMessage(msg).catch(() => null);
-    } catch {
-      return Promise.resolve(null);
-    }
-  };
-
   // counts only — the event object is never read beyond its existence
-  addEventListener('keydown', () => void (keys += 1), { capture: true, passive: true });
-  addEventListener('pointerdown', () => void (clicks += 1), { capture: true, passive: true });
-  addEventListener(
-    'scroll',
-    () => {
-      const now = Date.now();
-      if (now - lastScroll > 400) {
-        scrolls += 1;
-        lastScroll = now;
-      }
-    },
-    { capture: true, passive: true },
-  );
-  addEventListener('wheel', () => {
+  const onKey = () => void (keys += 1);
+  const onPointer = () => void (clicks += 1);
+  const onScroll = () => {
     const now = Date.now();
     if (now - lastScroll > 400) {
       scrolls += 1;
       lastScroll = now;
     }
-  }, { capture: true, passive: true });
+  };
+  const opts = { capture: true, passive: true } as const;
+  addEventListener('keydown', onKey, opts);
+  addEventListener('pointerdown', onPointer, opts);
+  addEventListener('scroll', onScroll, opts);
+  addEventListener('wheel', onScroll, opts);
+
+  /** Orphaned after an extension reload/update: stop counting entirely. */
+  const shutdown = () => {
+    clearInterval(timer);
+    removeEventListener('keydown', onKey, opts);
+    removeEventListener('pointerdown', onPointer, opts);
+    removeEventListener('scroll', onScroll, opts);
+    removeEventListener('wheel', onScroll, opts);
+    document.removeEventListener('fullscreenchange', onFullscreen);
+  };
+
+  const send = (msg: ToBackground): Promise<unknown> => {
+    if (!alive()) {
+      shutdown();
+      return Promise.resolve(null);
+    }
+    try {
+      return chrome.runtime.sendMessage(msg).catch(() => null);
+    } catch {
+      shutdown();
+      return Promise.resolve(null);
+    }
+  };
 
   const flush = () => {
     if (!alive()) {
-      clearInterval(timer);
+      shutdown();
       return;
     }
     if (document.visibilityState !== 'visible') return;
@@ -73,10 +81,11 @@ import { OVERLAY_CSS } from './overlay-css';
   };
   const timer = setInterval(flush, 10_000);
 
-  document.addEventListener('fullscreenchange', () => {
+  function onFullscreen() {
     void send({ kind: 'fullscreen', on: !!document.fullscreenElement });
     if (document.fullscreenElement) hideAll();
-  });
+  }
+  document.addEventListener('fullscreenchange', onFullscreen);
 
   // ───────────── overlays ─────────────
 
@@ -247,7 +256,7 @@ import { OVERLAY_CSS } from './overlay-css';
     if (spec.autoFadeMs) fadeTimers.set(spec.id, window.setTimeout(() => hide(spec.id), spec.autoFadeMs));
   }
 
-  chrome.runtime.onMessage.addListener((msg: ToContent, _sender, sendResponse) => {
+  if (alive()) chrome.runtime.onMessage.addListener((msg: ToContent, _sender, sendResponse) => {
     if (msg.kind === 'showOverlay') render(msg.spec);
     else if (msg.kind === 'overlayNote') note(msg.overlayId, msg.text);
     else if (msg.kind === 'hideOverlay') (msg.overlayId ? hide(msg.overlayId) : hideAll());

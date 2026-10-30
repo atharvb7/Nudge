@@ -97,7 +97,7 @@ function testPage() {
     await panel.locator('.step-text').waitFor({ timeout: 40000 });
     const offline = await panel.getByText('offline idea').count();
     check(withBackend ? 'got a step from the backend' : 'got an offline card with backend down', withBackend ? offline === 0 : offline > 0, await panel.locator('.step-text').innerText());
-    for (const label of ['Done', 'Too big', 'Make it smaller', 'Different idea', 'I need rest']) {
+    for (const label of ['Done', 'Too much right now', 'Make it smaller', 'Different idea', 'I need rest']) {
       check(`button "${label}" present`, (await panel.getByRole('button', { name: new RegExp(`^${label}`) }).count()) > 0);
     }
     await panel.screenshot({ animations: 'disabled', path: path.join(outDir, '05-step.png'), fullPage: true });

@@ -132,7 +132,13 @@ export function SettingsScreen({ store, onDemo }: { store: StorageShape; onDemo:
             <option value="local-whisper">Local Whisper (needs the Nudge helper running)</option>
             <option value="chrome-cloud">Chrome cloud speech — audio goes to Google</option>
           </select>
-          <p className="small muted">On-device speech here: {onDevice === 'available' ? 'ready' : onDevice === 'downloadable' ? 'can be downloaded' : 'not supported in this browser yet'}.</p>
+          <p className="small muted">
+            {onDevice === 'available'
+              ? 'Private on-device speech is ready in this browser.'
+              : onDevice === 'downloadable'
+                ? 'This browser can download a private on-device speech pack. Choose “On-device only” above to set it up.'
+                : 'This browser can’t do on-device speech yet. Buttons and typing always work.'}
+          </p>
         </div>
         <Toggle label="Whisper mode" hint="Listens more closely, for shared rooms." checked={s.whisperMode} onChange={(v) => set({ whisperMode: v })} />
         <Toggle

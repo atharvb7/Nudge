@@ -70,6 +70,15 @@ function mockBackend() {
             }),
           );
         }
+        if (req.url === '/sequence' && body.includes('zzrest')) {
+          return res.end(
+            JSON.stringify({
+              mode: 'coach', lead: null, next_step: 'You’re allowed to rest. Your task will be saved for later.', why_one_line: 'Rest refills energy.', size: 'tiny',
+              buttons: ['done', 'too_big', 'smaller', 'different', 'rest'], strategy_id: 'permission_to_rest', strategy_name: 'Permission to rest',
+              validation: null, suggest_rest: true, source: 'card', safety: null,
+            }),
+          );
+        }
         if (req.url === '/offramp') return setTimeout(() => res.end(JSON.stringify({ note_to_future_self: 'slow note', rest_suggestion: 'rest', source: 'card' })), 17000);
         res.statusCode = 503;
         res.end('{}');
@@ -156,9 +165,9 @@ function mockBackend() {
     await task.screenshot({ path: path.join(outDir, '02-off-for-today-note.png') });
     check('the kind note stays visible after closing', (await overlayCount()) === 1);
 
-    console.log('DBG feats', Math.round(process.uptime()), ((await store('features')).features || []).length, JSON.stringify((await sesStore(['windowStart','lastState','lastTickError'])))); 
     // ── 2. tiny viewport ──
     await task.setViewportSize({ width: 320, height: 480 });
+    await sleep(6500); // let the earlier "off for today" note fade on its own
     await simulate('restuck');
     await sleep(600);
     const rect = await task.evaluate(() => {
@@ -196,7 +205,6 @@ function mockBackend() {
     await csp.screenshot({ path: path.join(outDir, '04-strict-csp.png') });
     await csp.close();
 
-    console.log('DBG feats5', Math.round(process.uptime()), ((await store('features')).features || []).length, JSON.stringify((await sesStore(['windowStart','lastState','lastTickError']))));
     // ── 5. pinned tab navigating to another site ──
     await task.bringToFront();
     await panel.evaluate(() => chrome.storage.session.set({ rawEvents: [] }));
@@ -282,7 +290,7 @@ function mockBackend() {
     await panel.getByRole('button', { name: 'Help me start', exact: true }).click();
     await panel.locator('.step-text').waitFor({ timeout: 30000 });
     check('empty input still gets a tiny step', (await panel.locator('.step-text').innerText()).length > 5);
-    await panel.getByRole('button', { name: /^Too big/ }).click();
+    await panel.getByRole('button', { name: /^Too much right now/ }).click();
     await panel.locator('.step-text').waitFor();
     const restOffered = await panel.getByText(/Resting is a perfectly good choice|Resting is also a valid choice/).count();
     check('at the lowest energy "Too big" offers rest alongside a smaller step', restOffered > 0);
@@ -354,6 +362,111 @@ function mockBackend() {
     await panel.getByRole('button', { name: 'Back to Nudge' }).click();
     await panel.getByRole('button', { name: 'Settings' }).click();
     await panel.getByLabel('Region for support lines').selectOption('IN');
+
+    // ── 15. "Help me start" in the page starts a step straight away ──
+    await panel.getByRole('button', { name: 'Nudge home' }).click();
+    await panel.evaluate(() => chrome.storage.session.set({ panelIntent: { screen: 'stuck', state: 'stuck', t: Date.now() } }));
+    await panel.locator('.step-text').waitFor({ timeout: 30000 });
+    check('bubble "Help me start" opens straight onto a first step (no second tap)', true);
+
+    // ── 16. "Stuck again" never repeats the step that stalled ──
+    const stalled = (await panel.locator('.step-text').innerText()).trim();
+    await panel.evaluate(() => chrome.storage.session.set({ panelIntent: { screen: 'resume', t: Date.now() } }));
+    await panel.waitForFunction((old) => {
+      const el = document.querySelector('.step-text');
+      return el && el.textContent.trim() !== old;
+    }, stalled, { timeout: 30000 }).catch(() => undefined);
+    const resumed = (await panel.locator('.step-text').innerText()).trim();
+    check('"Stuck again" offers a different step, never the same one', resumed !== stalled, resumed.slice(0, 60));
+    check('…and never mentions the stall', !/stall|again you|didn.t finish|abandon/i.test(await panel.locator('main').innerText()));
+
+    // ── 17. rest cards rest instead of "Done" ──
+    await panel.getByRole('button', { name: 'Nudge home' }).click();
+    await panel.getByRole('button', { name: 'Welcome back' }).count(); // no-op
+    await panel.getByLabel(/What is it/).fill('zzrest');
+    await panel.getByRole('button', { name: 'Help me start', exact: true }).click();
+    await panel.locator('.step-text').waitFor({ timeout: 30000 });
+    check('a rest card offers "Rest now" (not "Done")', (await panel.getByRole('button', { name: /^Rest now/ }).count()) === 1 && (await panel.getByRole('button', { name: /^Done/ }).count()) === 0);
+    await panel.screenshot({ path: path.join(outDir, '11-rest-card.png'), fullPage: true });
+    await panel.getByRole('button', { name: /^Rest now/ }).click();
+    check('…which leads to the rest choices', (await panel.getByRole('button', { name: '5 min', exact: true }).count()) === 1);
+
+    // ── 18. "concern" level: I'm safe, just frustrated; copy the number ──
+    await panel.getByRole('button', { name: 'Nudge home' }).click();
+    await panel.getByLabel(/What is it/).fill('I feel so hopeless about this');
+    await panel.getByRole('button', { name: 'Help me start', exact: true }).click();
+    await panel.getByText(/Tele-MANAS/).waitFor();
+    await panel.getByRole('button', { name: /Copy Tele-MANAS number/ }).click();
+    check('support numbers can be copied (desktop often ignores tel: links)', (await panel.getByRole('button', { name: /Copy Tele-MANAS number/ }).innerText()).trim() === 'Copied');
+    await panel.screenshot({ path: path.join(outDir, '12-safety-concern.png'), fullPage: true });
+    await panel.getByRole('button', { name: /I’m safe — just really frustrated/ }).click();
+    await panel.getByRole('button', { name: 'Take a break' }).waitFor();
+    check('"I’m safe — just really frustrated" → validation and a rest offer', (await panel.getByText(/Thank you for telling me/).count()) === 1);
+    await panel.screenshot({ path: path.join(outDir, '13-frustrated.png'), fullPage: true });
+    const dump3 = JSON.stringify(await panel.evaluate(async () => [await chrome.storage.local.get(null), await chrome.storage.session.get(null)]));
+    check('…and the hopeless sentence was not stored', !/hopeless about this/.test(dump3));
+    await panel.getByRole('button', { name: 'Back to start' }).click();
+
+    // ── 19. brain dump: one pick first, everything else tucked away ──
+    await panel.getByRole('button', { name: 'Brain dump' }).click();
+    await panel.getByLabel('Everything on your mind').fill("I have the DBMS assignment due tomorrow, haven't started the OS lab report, honestly it's too much, mum keeps calling, need to email prof, and the laundry is piling up, also pay mess fees, book a doctor appointment");
+    await panel.getByRole('button', { name: 'Sort it for me' }).click();
+    await panel.getByText('Just one to start with:').waitFor({ timeout: 30000 });
+    const swaps = await panel.locator('.chips .chip-btn').count();
+    const heard = await panel.getByText(/See everything I heard \(\d+\)/).count();
+    check('brain dump shows one pick, ≤3 swaps, the rest tucked behind "See everything I heard"', swaps <= 3 && heard === 1, `swaps=${swaps}`);
+    check('…the feeling is validated, not listed as a task', (await panel.getByText(/a lot to hold/).count()) === 1 && !(await panel.locator('details').innerText()).match(/too much/i));
+    check('…and "Rest instead" is right there', (await panel.getByRole('button', { name: 'Rest instead' }).count()) === 1);
+    await panel.screenshot({ path: path.join(outDir, '14-brain-dump.png'), fullPage: true });
+
+    // ── 20. a break from days ago → welcome back, not a stale timer ──
+    await panel.evaluate(() => chrome.storage.local.set({ breakState: { startedAt: Date.now() - 3 * 86_400_000, plannedMin: 15, returnPromptShown: false } }));
+    await panel.reload();
+    await panel.getByText(/Welcome back/).waitFor({ timeout: 10000 }).catch(() => undefined);
+    check('an old break opens on "Welcome back", not the break timer', (await panel.getByText(/Welcome back/).count()) > 0 && (await panel.getByText(/Break’s done/).count()) === 0);
+    check('…and the stale break is cleared', (await store('breakState')).breakState === null);
+    await panel.screenshot({ path: path.join(outDir, '15-welcome-after-days.png'), fullPage: true });
+    await panel.getByRole('button', { name: 'Start fresh' }).click();
+
+    // ── 21. fonts really load; literal energy uses plain numbers ──
+    const fonts = await panel.evaluate(async () => {
+      await document.fonts.ready;
+      return { atkinson: document.fonts.check('16px "Atkinson Hyperlegible"'), body: getComputedStyle(document.body).fontFamily };
+    });
+    check('Atkinson Hyperlegible actually applies to the panel body', fonts.atkinson && /Atkinson/.test(fonts.body), JSON.stringify(fonts));
+    await patchSettings({ a11y: { font: 'dyslexic', textScale: 1, highContrast: false, reducedMotion: 'system' } });
+    await sleep(400);
+    const lexend = await panel.evaluate(async () => {
+      await document.fonts.load('16px "Lexend"');
+      return { ok: document.fonts.check('16px "Lexend"'), body: getComputedStyle(document.body).fontFamily };
+    });
+    check('dyslexia-friendly Lexend loads and applies', lexend.ok && /Lexend/.test(lexend.body), JSON.stringify(lexend));
+    await patchSettings({ a11y: { font: 'default', textScale: 1, highContrast: false, reducedMotion: 'system' }, wordingStyle: 'literal' });
+    await sleep(400);
+    check('literal mode: energy shows plain numbers, no metaphors', (await panel.getByRole('radio', { name: '1 — Very low energy' }).count()) === 1 && !(await panel.locator('.energy').innerText()).includes('🥄'));
+    await panel.screenshot({ path: path.join(outDir, '16-literal-home.png'), fullPage: true });
+    // arrow keys move through the energy radios
+    await panel.getByRole('radio', { checked: true }).first().focus();
+    const beforeE = await panel.getByRole('radio', { checked: true }).first().getAttribute('aria-label');
+    await panel.keyboard.press('ArrowRight');
+    await sleep(200);
+    const afterE = await panel.evaluate(() => document.activeElement.getAttribute('aria-label'));
+    check('arrow keys move between energy options', beforeE !== afterE && /energy/.test(afterE || ''), `${beforeE} → ${afterE}`);
+    await patchSettings({ wordingStyle: 'warm' });
+
+    // ── 22. Tab only ever lands on real controls ──
+    await panel.getByRole('button', { name: 'Nudge home' }).click();
+    await panel.locator('body').click({ position: { x: 2, y: 2 } });
+    const stops = [];
+    for (let i = 0; i < 25; i++) {
+      await panel.keyboard.press('Tab');
+      stops.push(await panel.evaluate(() => {
+        const el = document.activeElement;
+        return el ? `${el.tagName.toLowerCase()}${el.getAttribute('role') ? '[' + el.getAttribute('role') + ']' : ''}` : 'none';
+      }));
+    }
+    const stray = stops.filter((t) => !/^(button|a|input|select|textarea|summary|body)/.test(t));
+    check('no stray tab stops on the panel', stray.length === 0, stray.join(', '));
 
     // ── 14. every control has a name and a comfortable size ──
     await panel.getByRole('button', { name: 'Nudge home' }).click();

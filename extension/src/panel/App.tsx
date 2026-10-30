@@ -25,7 +25,7 @@ import { GearIcon, Loading, MoonIcon } from './components/ui';
 import { Onboarding } from './screens/Onboarding';
 import { Home } from './screens/Home';
 import { Celebrate, StepView, type StepResp } from './screens/Step';
-import { BodyDouble, BrainDump, DayClosed, RestChoose, Resting, Safety, Welcome } from './screens/Together';
+import { BodyDouble, BrainDump, DayClosed, Frustrated, RestChoose, Resting, Safety, Welcome } from './screens/Together';
 import { SettingsScreen } from './screens/Settings';
 import { Demo } from './screens/Demo';
 
@@ -41,6 +41,7 @@ type Screen =
   | 'dayclosed'
   | 'welcome'
   | 'safety'
+  | 'frustrated'
   | 'settings'
   | 'demo';
 
@@ -383,6 +384,7 @@ export function App() {
             setDump(null);
             setScreen('braindump');
           }}
+          todayWins={store.wins.filter((w) => dayKey(w.t) === dayKey())}
         />
       ) : (
         <Loading text={loadingText} />
@@ -394,6 +396,7 @@ export function App() {
           resp={resp}
           settings={s}
           count={doneCount(current)}
+          energy={current?.energy ?? energy}
           onFeedback={(f) => void actions.feedback(resp.strategy_id, f)}
           onNext={() => void sequence('next')}
           onBodyDouble={() => {
@@ -455,6 +458,7 @@ export function App() {
             setDump(null);
             void begin(item, undefined, 'overwhelmed');
           }}
+          onRest={() => setScreen('rest')}
         />
       );
       break;
@@ -498,6 +502,7 @@ export function App() {
             setScreen('home');
           }}
           onPickUp={current && !current.endedAt && current.steps.length ? () => void resume() : null}
+          onRest={() => setScreen('rest')}
         />
       );
       break;
@@ -509,9 +514,23 @@ export function App() {
             setSafety(null);
             setScreen('home');
           }}
+          onFrustrated={() => setScreen('frustrated')}
         />
       ) : (
         <Loading text="…" />
+      );
+      break;
+    case 'frustrated':
+      body = (
+        <Frustrated
+          settings={s}
+          onRest={() => setScreen('rest')}
+          onHome={() => {
+            setSafety(null);
+            setScreen('home');
+          }}
+          onSupport={() => setScreen(safety ? 'safety' : 'home')}
+        />
       );
       break;
     case 'settings':

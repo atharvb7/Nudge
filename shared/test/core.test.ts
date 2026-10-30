@@ -432,3 +432,16 @@ describe('persona review fixes (shared)', () => {
     expect(r.validation).toBeTruthy();
   });
 });
+
+describe('low energy never gets "small" cards', () => {
+  it('focus_round_10 / walk_reset / change_location never appear at energy <= 2', async () => {
+    const { localSequence, seededRandom: rnd } = await import('../src');
+    for (let i = 0; i < 200; i++) {
+      for (const energy of [1, 2] as const) {
+        const r = localSequence({ task: 'walk somewhere new for a focus round', state: i % 2 ? 'depleted' : 'overwhelmed', energy, history: [], top_strategies: [{ id: 'focus_round_10', score: 1 }, { id: 'walk_reset', score: 1 }, { id: 'change_location', score: 1 }], action: i % 3 ? 'different' : 'start', wording_style: 'warm', explain_why: false }, 'IN', rnd(i));
+        expect(['focus_round_10', 'walk_reset', 'change_location']).not.toContain(r.strategy_id);
+        expect(r.size).toBe('tiny');
+      }
+    }
+  });
+});
