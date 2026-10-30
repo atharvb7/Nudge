@@ -164,6 +164,28 @@ function mockBackend() {
     await panel.screenshot({ path: path.join(outDir, '02-safety.png'), fullPage: true });
     await panel.getByRole('button', { name: 'Back to Nudge' }).click();
 
+    // ── 2b. "concern" level: the venting escape is right under the message ──
+    await home();
+    await ask("honestly I'm such a burden to everyone");
+    await panel.getByText(/Tele-MANAS/).waitFor({ timeout: 8000 });
+    const esc = panel.getByRole('button', { name: /I’m safe — just really frustrated/ });
+    const escBox = await esc.boundingBox().catch(() => null);
+    const resBox = await panel.locator('.resource').first().boundingBox();
+    check('"I\'m safe — just really frustrated" is big and sits above the helplines', !!escBox && !!resBox && escBox.y < resBox.y && escBox.height >= 48, JSON.stringify({ escBox, resY: resBox && resBox.y }));
+    await panel.screenshot({ path: path.join(outDir, '02b-concern.png'), fullPage: true });
+    await esc.click();
+    await sleep(400);
+    await home();
+
+    // ── 2c. brain dump: numbered list, filler dropped, one pick that fits ──
+    await panel.getByRole('button', { name: 'Brain dump' }).click();
+    await panel.getByLabel('Everything on your mind').fill('1. ML quiz 2. resume 3. idk 4. laundry');
+    await panel.getByRole('button', { name: 'Sort it for me' }).click();
+    await sleep(1500);
+    const bd = await panel.locator('main').innerText();
+    check('brain dump splits a numbered list and drops "idk"', !/ML quiz 2|Resume 3|\bidk\b/i.test(bd) && /ML quiz/i.test(bd), bd.replace(/\s+/g, ' ').slice(0, 200));
+    await panel.screenshot({ path: path.join(outDir, '02c-brain-dump.png'), fullPage: true });
+
     // ── 3. slow helper: quick idea after ~2.5 s, late reply ignored, one request ──
     await home();
     const t0 = Date.now();

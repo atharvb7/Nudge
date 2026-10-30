@@ -72,7 +72,7 @@ export default function DemoPage() {
       />
       <p className="mb-6 text-sm text-muted">
         Preparing a pitch?{' '}
-        <Link href="/insights" className="font-semibold text-accent underline underline-offset-4">
+        <Link href="/insights" className="font-semibold text-ink underline underline-offset-4">
           Pitch slide template
         </Link>{' '}
         — a page for real, consented interview quotes (it isn’t part of the app).

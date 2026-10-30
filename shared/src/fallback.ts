@@ -1,4 +1,4 @@
-import { CELEBRATIONS, OPENERS, VALIDATIONS, cleanTabTitle, fillTask, isSafeTaskLabel, looksLikeFeeling, pick, softenCopy, findBannedWords, taskKind, taskLabel, type TaskKindName } from './copy';
+import { CELEBRATIONS, OPENERS, VALIDATIONS, cleanTabTitle, fillTask, isSafeTaskLabel, looksLikeFeeling, pick, softenCopy, findBannedWords, taskKind, nounPhrase, type TaskKindName } from './copy';
 import { detectCrisis, safetyPayload } from './crisis';
 import { STRATEGIES, STRATEGY_BY_ID } from './strategies';
 import type {
@@ -49,7 +49,7 @@ function similarity(card: StrategyCard, text: string): number {
 }
 
 /** Steps that only make sense for something you open on a screen ("Open {task}", "the title of {task}"). */
-const SCREEN_ONLY = /\b(open|skim|scroll|highlight|title of|copy the|rubric|paragraph of|font|window)\b[^.]*\{task\}|\{task\}[^.]*\b(into its own window|at the top of the page|looks)\b/i;
+const SCREEN_ONLY = /\b(open|touch|skim|scroll|highlight|title of|copy the|rubric|paragraph of|font|window)\b[^.]*\{task\}|\{task\}[^.]*\b(into its own window|at the top of the page|looks)\b/i;
 
 /** Does this card fit this kind of task? (docs/ARCHITECTURE.md "Task kinds") */
 export function cardFitsKind(c: StrategyCard, kind: TaskKindName, task = ''): boolean {
@@ -99,7 +99,7 @@ export function rankCards(req: SequenceRequest, rand: () => number = Math.random
     if (req.energy <= 1 && (c.is_rest || c.modality === 'sensory' || c.modality === 'rest')) s *= 1.6;
     if (req.state === 'overwhelmed' && /overwhelm|sensory|calm|choice|self-compassion/.test(c.tags.join(' '))) s *= 1.4;
     if (req.energy >= 3 && c.is_rest && req.state !== 'depleted') s *= 0.4; // don't push rest on someone with energy, but keep it possible
-    if (req.state === 'depleted' && (c.is_rest || c.modality === 'rest' || c.modality === 'body')) s *= 2.5; // depleted: rest first
+    if (req.state === 'depleted' && req.action === 'start' && (c.is_rest || c.modality === 'rest' || c.modality === 'body')) s *= 2.5; // depleted: rest first
     if (kind !== 'unknown' && (c.task_kinds ?? []).includes(kind as never)) s *= 1.3; // made for this kind of task
     s *= 0.9 + rand() * 0.2; // gentle jitter so ties rotate
     return { c, s };
@@ -109,6 +109,14 @@ export function rankCards(req: SequenceRequest, rand: () => number = Math.random
 
 /** Words that mean "this is a lot right now" → validate first, in one sentence. */
 export const OVERWHELM = /\b(overwhelm\w*|too much|can['’]?t do|can['’]?t even|can['’]?t (?:start|begin|focus|get started)|so much|everything|killing me|so hard|ugh+|argh+|hate this|drowning|piling up|stressed|panic\w*)\b/i;
+
+/** A question or a set-up clause isn't an action to shrink — mirrors _NOT_AN_ACTION in backend/app/fallback.py. */
+const NOT_AN_ACTION = /^(?:what|which|how|who|when|where|why|here|before|if|quick|mini|tiny|let'?s|you'?re|it'?s|this|that'?s|sometimes|choose|pick your|finish this|start from|change the goal|turn|a\s|the\s|one\s|small)\b/i;
+
+function isAction(step: string): boolean {
+  const first = step.split(/(?<=[.!?])\s+/)[0] ?? '';
+  return !first.includes('?') && !NOT_AN_ACTION.test(first.trim());
+}
 
 const SMALLEST = ['just_open_it', 'one_item_only', 'first_line_only', 'one_percent', 'first_physical_action', 'write_the_title', 'read_one_paragraph', 'gather_what_you_need', 'set_up_space'];
 
@@ -167,10 +175,11 @@ export function localSequence(req: SequenceRequest, region: Region = 'IN', rand:
     const used = new Set(req.history.map((h) => h.strategy_id));
     const fits = (id: string) => {
       const c = STRATEGY_BY_ID[id];
-      return !!c && !used.has(id) && c.min_energy <= Math.max(1, req.energy) && cardFitsKind(c, kind, named);
+      return !!c && !used.has(id) && c.min_energy <= Math.max(1, req.energy) && cardFitsKind(c, kind, named) && isAction(c.steps[0]);
     };
-    const id = SMALLEST.find(fits) ?? SMALLEST.find((x) => STRATEGY_BY_ID[x] && cardFitsKind(STRATEGY_BY_ID[x], kind, named)) ?? 'one_percent';
-    card = STRATEGY_BY_ID[id];
+    const id = SMALLEST.find(fits);
+    // nothing smaller fits this task: switch to another tiny card instead of shrinking a question
+    card = id ? STRATEGY_BY_ID[id] : rankCards({ ...req, action: 'different', energy: Math.min(req.energy, 2) as SequenceRequest['energy'] }, rand).find((c) => isAction(c.steps[0]));
     // said as a lead ("Even smaller, then."), never glued onto a step that may be a question
     prefix = req.wording_style === 'literal' ? '' : 'Even smaller, then.';
   }
@@ -182,7 +191,9 @@ export function localSequence(req: SequenceRequest, region: Region = 'IN', rand:
   let next = fillTask(stepText(card, index, req.wording_style), taskForText, req.task_tab_title, req.wording_style);
   if (findBannedWords(next).length) next = softenCopy(next);
 
-  const depleted = req.state === 'depleted';
+  // rest-first once, at the start — not on every step, and not if a rest card was already offered
+  const restShown = req.history.some((h) => STRATEGY_BY_ID[h.strategy_id]?.is_rest);
+  const depleted = req.state === 'depleted' && req.action === 'start' && !restShown;
   const overwhelmed = req.state === 'overwhelmed' || OVERWHELM.test(`${req.transcript ?? ''} ${looksLikeFeeling(req.task) ? req.task : ''}`);
   const restLead =
     req.wording_style === 'literal'
@@ -297,7 +308,7 @@ const UNI_KINDS: TaskKindName[] = ['doc', 'reading', 'study', 'code'];
 /** A first step that fits what the item is (you can't "open" laundry or a phone call). */
 export function firstStepFor(item: string, style: WordingStyle): string {
   const kind = taskKind(item);
-  const name = taskLabel(item);
+  const name = nounPhrase(item, kind);
   const lit = style === 'literal';
   if (kind === 'message' && /^(call|ring|phone)\b/i.test(item)) {
     return lit ? `Write three words you want to say during ${name}.` : `Jot three words you want to say on ${name}. That's your whole script.`;

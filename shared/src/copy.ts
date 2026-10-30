@@ -1,3 +1,4 @@
+import { detectCrisis } from './crisis';
 import type { ActionButton, WordingStyle } from './types';
 
 // All user-facing words live here so the tone stays consistent:
@@ -225,7 +226,7 @@ const NOT_A_TASK = /\b(end\s+it|ending|die|dying|dead|death|kill\w*|hurt\w*|harm
 export function isSafeTaskLabel(text: string): boolean {
   const t = (text || '').trim();
   if (!t || t.length > 60 || t.split(/\s+/).length > 8) return false;
-  if (looksLikeFeeling(t) || NOT_A_TASK.test(t)) return false;
+  if (looksLikeFeeling(t) || NOT_A_TASK.test(t) || detectCrisis(t) !== 'none') return false;
   return /[a-z0-9]/i.test(t);
 }
 
@@ -298,9 +299,6 @@ export function nounPhrase(task: string, kind: TaskKindName = taskKind(task)): s
   return withDet(stripped, kind === 'chore' ? 'the' : 'your');
 }
 
-/** @deprecated use nounPhrase */
-export const taskLabel = (task: string) => nounPhrase(task);
-
 /**
  * Pull the task out of a feeling sentence: "ugh I can't start my essay" →
  * "essay". Returns '' when no safe task name is in there.
@@ -334,6 +332,7 @@ const FILE_RE = /\.(pdf|docx?|pptx?|xlsx?|txt|md|ipynb|py|java|c|cpp|js|ts|csv|o
 export function labelFor(rawTask: string, tabTitle: string | undefined, style: WordingStyle): string {
   const raw = (rawTask || '').replace(/[{}]/g, '').trim();
   let task = isSafeTaskLabel(raw) ? raw : extractTask(raw);
+  task = task.replace(/^your\s+(?=\S*[_.])/i, ''); // a file name is a name, not "your …"
   const title = cleanTabTitle(tabTitle);
   if (title && task && task.toLowerCase() !== raw.replace(/[.!?]+$/, '').toLowerCase()) task = ''; // dug out of a feeling
   const kind = task ? taskKind(task) : taskKind(title);

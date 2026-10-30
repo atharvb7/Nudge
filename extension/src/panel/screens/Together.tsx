@@ -407,6 +407,17 @@ export function Safety({ payload, onBack, onFrustrated }: { payload: SafetyPaylo
       <section className="card calm" role="status" aria-live="polite">
         <p style={{ fontSize: '1.1rem', margin: 0 }}>{payload.message}</p>
       </section>
+      {payload.level === 'concern' && onFrustrated && (
+        // Venting is allowed. Right under the message, big and kind — never a small link.
+        <div className="stack" style={{ gap: 6 }}>
+          <button type="button" className="btn soft block big" onClick={onFrustrated}>
+            I’m safe — just really frustrated
+          </button>
+          <p className="small muted" style={{ margin: 0 }}>
+            That’s okay to say. I’ll stay with you, and the numbers below are here any time.
+          </p>
+        </div>
+      )}
       <ul className="list" aria-label="People you can talk to right now">
         {payload.resources.map((r) => (
           <li key={r.name} className="resource">
@@ -437,11 +448,6 @@ export function Safety({ payload, onBack, onFrustrated }: { payload: SafetyPaylo
       </p>
       <p>{TRUSTED_PERSON_LINE}</p>
       <p className="small muted">Nothing you typed or said here was saved.</p>
-      {payload.level === 'concern' && onFrustrated && (
-        <button type="button" className="btn soft" onClick={onFrustrated}>
-          I’m safe — just really frustrated
-        </button>
-      )}
       <button type="button" className="link" onClick={onBack}>
         Back to Nudge
       </button>

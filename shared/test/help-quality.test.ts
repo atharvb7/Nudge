@@ -122,6 +122,28 @@ describe('every card reads well for every kind of task', () => {
   });
 });
 
+describe('backend parity', () => {
+  it('names tasks like the backend', async () => {
+    const { nounPhrase } = await import('../src');
+    expect(nounPhrase('call mom')).toBe('your call with mom');
+    expect(nounPhrase('do laundry')).toBe('the laundry');
+    expect(nounPhrase('email prof')).toBe('your message to prof');
+    expect(nounPhrase('write my essay')).toBe('your essay');
+    expect(fillTask('Jot what the finished {task} would say.', 'essay', undefined, 'warm')).toBe('Jot what your finished essay would say.');
+  });
+  it('"Make it smaller" never shrinks a question or set-up clause', () => {
+    for (const task of ['essay', 'laundry', 'call mom', 'email prof', ''])
+      for (let i = 0; i < 10; i++) {
+        const r = localSequence(req({ task, action: 'smaller', history: [{ step: 'x', strategy_id: 'just_open_it' }] }), 'IN', seededRandom(i));
+        expect(r.next_step, `${task}: ${r.next_step}`).not.toMatch(/^(What|Which|How|Before|If|Change the goal|Here are)\b/);
+      }
+  });
+  it('depleted is rest-first only once, at the start', () => {
+    const again = localSequence(req({ task: 'essay', state: 'depleted', action: 'next', history: [{ step: 'x', strategy_id: 'permission_to_rest' }] }), 'IN', seededRandom(3));
+    expect(again.lead ?? '').not.toMatch(/resting is a real option/i);
+  });
+});
+
 describe('kindness signals', () => {
   it('"ugh / can\'t start / so hard" gets a validation line', () => {
     for (const t of ["ugh I can't start my essay", 'this is so hard', "I can't start"])
