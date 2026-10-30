@@ -389,15 +389,21 @@ function mockBackend() {
     check('a rest card offers "Rest now" (not "Done")', (await panel.getByRole('button', { name: /^Rest now/ }).count()) === 1 && (await panel.getByRole('button', { name: /^Done/ }).count()) === 0);
     await panel.screenshot({ path: path.join(outDir, '11-rest-card.png'), fullPage: true });
     await panel.getByRole('button', { name: /^Rest now/ }).click();
-    check('…which leads to the rest choices', (await panel.getByRole('button', { name: '5 min', exact: true }).count()) === 1);
+    const restShown = await panel.getByRole('button', { name: '5 min', exact: true }).waitFor({ timeout: 5000 }).then(() => true, () => false);
+    check('…which leads to the rest choices', restShown);
 
     // ── 18. "concern" level: I'm safe, just frustrated; copy the number ──
     await panel.getByRole('button', { name: 'Nudge home' }).click();
     await panel.getByLabel(/What is it/).fill('I feel so hopeless about this');
     await panel.getByRole('button', { name: 'Help me start', exact: true }).click();
     await panel.getByText(/Tele-MANAS/).waitFor();
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: `chrome-extension://${id}` }).catch(() => undefined);
+    await panel.bringToFront();
     await panel.getByRole('button', { name: /Copy Tele-MANAS number/ }).click();
-    check('support numbers can be copied (desktop often ignores tel: links)', (await panel.getByRole('button', { name: /Copy Tele-MANAS number/ }).innerText()).trim() === 'Copied');
+    const copiedOk = await panel.getByRole('button', { name: /Copy Tele-MANAS number/ }).filter({ hasText: 'Copied' }).waitFor({ timeout: 4000 }).then(() => true, () => false);
+    const clip = await panel.evaluate(() => navigator.clipboard.readText().catch(() => '')).catch(() => '');
+    // headless Chromium can't read the system clipboard back, so a successful copy is confirmed by the UI
+    check('support numbers can be copied (desktop often ignores tel: links)', copiedOk && (clip === '' || clip === '14416'), `shown=${copiedOk} clipboard="${clip || 'unreadable headless'}"`);
     await panel.screenshot({ path: path.join(outDir, '12-safety-concern.png'), fullPage: true });
     await panel.getByRole('button', { name: /I’m safe — just really frustrated/ }).click();
     await panel.getByRole('button', { name: 'Take a break' }).waitFor();

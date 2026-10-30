@@ -63,6 +63,8 @@ src/onboarding, src/mic      full-tab onboarding + microphone permission page
 | `alarms` | The 30 s feature tick and break timers. MV3 workers sleep, so `setInterval` isn’t reliable. |
 | `sidePanel` | The “I’m stuck” panel. |
 | `offscreen` | Only for the optional on-device wake phrase. |
+| `scripting` | Adds the counter/bubble script to tabs that were already open when Nudge was installed or updated, including your task tab. Without it those tabs would stay silent until reloaded. |
+| `clipboardWrite` | The “Copy” button next to support numbers. Desktop Chrome often ignores `tel:` links. |
 | `<all_urls>` content script | Counting key/scroll/click **events** (never which key, never what you clicked, never page content), noticing fullscreen, and showing the small nudge bubble. |
 
 `incognito: "not_allowed"`: Nudge never runs in incognito windows.
@@ -78,18 +80,40 @@ src/onboarding, src/mic      full-tab onboarding + microphone permission page
 
 ## Edge cases handled
 
-* **Service worker restarts:** all state lives in storage and the alarms re-arm on startup. A break, a session or a step watch survives the restart.
-* **Pinned task tab closed:** the host and title are kept, and the same site counts as the task. You can re-pin in Settings.
-* **Browser unfocused or several windows open:** counted as "elsewhere", not as escape.
-* **System sleep:** `idle: locked` counts as away, so no nudges. The activity session resets after 30 min away.
+Verified by `npm test` (`test/plan.test.ts` has every anti-nag rule as a pure unit test) and `node scripts/edge.cjs`, which runs 53 end-to-end checks in real Chromium.
+
+* **Service worker restarts:** all state lives in storage, alarms re-arm on startup, and each tick saves its decision before showing anything. A restart never doubles up a nudge. A break, a session or a step watch survives it.
+* **One overlay at a time:** each tick shows at most one bubble or chip, in this priority order: long-break prompt, then "still going?", then the stuck nudge, then hydration, then the time anchor, then the check-in.
+* **Pinned task tab:**
+  * Closed and reopened: the new tab is adopted.
+  * Navigated to another site: it no longer counts as the task, and keeps its own name.
+  * Renamed doc: the title stays fresh.
+* **Reading a PDF:** Chrome's PDF viewer reports no key or scroll counts, so time spent on the task tab also counts as activity. Long reading stretches are never "stuck".
+* **Browser unfocused:** counted as "elsewhere". Coming back to the same tab is not a switch.
+* **Same-tab navigation and single-page apps:** a change of site is a context switch; reloads on the same site are not.
+* **Fullscreen:** page fullscreen (including iframe video) and browser fullscreen silence everything. Fullscreen ends when the tab changes.
+* **System sleep:** `idle: locked` counts as away. The activity session resets after 30 min away.
+* **Tabs that were already open:** the script is injected on install and update, and again on demand. A double injection never creates a second bubble.
+* **Strict page CSPs:** overlay styles use constructed stylesheets, so they still render.
 * **Pages that can't host content scripts** (`chrome://`, Web Store, PDF viewer): Nudge falls back to a calm toolbar badge. No notifications, no sound.
+* **After an extension reload or update:** orphaned page scripts stop counting quietly. The dashboard bridge answers `extension-reloaded` instead of throwing.
 * **Panel already open:** the panel sends a heartbeat, so Nudge never auto-nudges on top of itself.
 * **New day:** cooldowns and dismissals reset. Nothing carries over as a penalty.
-* **Learning mode (3 days):** no auto-nudges, just a 1-tap evening check-in. Demo mode skips it.
-* **Backend down or LLM slow** (25 s timeout): you get an on-device strategy card with a subtle "offline idea" label.
-* **Mic access denied:** Nudge opens a full tab to ask, because side panels can't always show the prompt. No speech or an empty input still gets a step, and buttons-only mode works everywhere.
+* **A break nobody came back from:** it's closed quietly 2 h after its planned end, or on a new day. The panel then says "Welcome back", not "Break's done".
+* **Learning mode (3 days):** no auto-nudges and no hydration chip, just a 1-tap evening check-in, once per day. Demo mode skips learning mode.
+* **Flapping states:** the same state isn't logged again within 10 minutes.
+* **Backend down or LLM slow** (25 s timeout for steps, 15 s for the off-ramp): you get an on-device strategy card or note.
+* **Helper flags a safety concern the on-device check missed:** the session and the "started" win created from those words are removed.
+* **Helper address:** "localhost:8000" is understood. Non-web addresses are refused. Addresses that aren't on your computer get an honest note that your words would leave the device.
+* **Mic access denied:** Nudge opens a full tab to ask, because side panels can't always show the prompt. No speech or an empty input still gets a step.
 * **Very long transcripts:** capped at 2000 characters before anything is sent.
-* **Feelings typed instead of a task name** ("this is killing me"): never quoted back as the task.
-* **3 "I'm fine"s in a day:** auto-nudges rest until tomorrow, with a kind note. Closing a bubble with × counts as "I'm fine".
+* **Feelings typed instead of a task name** ("this is killing me"): sent as what you said, never as the task, and validated first.
+* **Closing a bubble with × or Esc:** read as "I'm fine". This isn't a penalty: Nudge backs off, the quiet time doubles, and after 3 in a day it rests until tomorrow with a kind note. Minimising (–) doesn't count.
+* **Keyboard and screen readers:**
+  * Bubbles never steal focus.
+  * Every control is reachable with Tab, and Esc closes.
+  * Arrow keys move inside radio groups.
+  * Every control has a name, and controls are at least 44 px tall (48 px for in-page buttons).
+  * Your text size, contrast, motion and font settings also apply to in-page bubbles.
 
 Nudge is a support tool, not medical treatment.

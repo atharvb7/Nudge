@@ -12,7 +12,7 @@
   },
   "side_panel": { "default_path": "sidepanel.html" },
   "background": { "service_worker": "background.js", "type": "module" },
-  "permissions": ["storage", "tabs", "idle", "alarms", "sidePanel", "offscreen", "scripting"],
+  "permissions": ["storage", "tabs", "idle", "alarms", "sidePanel", "offscreen", "scripting", "clipboardWrite"],
   "host_permissions": ["<all_urls>"],
   "incognito": "not_allowed",
   "content_scripts": [
