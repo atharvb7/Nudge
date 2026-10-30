@@ -9,7 +9,7 @@
   --n-surface-2: #efeee8;
   --n-border: #dedbd2;
   --n-text: #2d3833;
-  --n-text-muted: #5f6b65;  /* ≥ 4.5:1 on --n-bg */
+  --n-text-muted: #4d5852;  /* ≥ 6:1 on every light surface, incl. calm / accent tints */
   --n-accent: #4f7d66;      /* sage (theme-able) */
   --n-accent-soft: #e4efe8;
   --n-accent-text: #ffffff;
@@ -65,8 +65,36 @@
   --n-focus: #8fb7ee;
 }
 
+
+
+/* Theme accents (unlockable, cosmetic only) */
+:root[data-accent='dusk'] { --n-accent: #6d5f9c; --n-accent-soft: #ece8f5; --n-accent-text: #ffffff; }
+:root[data-accent='tide'] { --n-accent: #42718b; --n-accent-soft: #e2edf3; --n-accent-text: #ffffff; }
+:root[data-accent='clay'] { --n-accent: #8e6849; --n-accent-soft: #f3ebe4; --n-accent-text: #ffffff; }
+:root[data-accent='moss'] { --n-accent: #5c6d3d; --n-accent-soft: #eef0e4; --n-accent-text: #ffffff; }
+
+/* Dark-mode versions of the theme accents: light accent + dark text (all ≥ 7:1). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light'])[data-accent='dusk'] { --n-accent: #b8abe6; --n-accent-soft: #312c45; --n-accent-text: #1b1630; }
+  :root:not([data-theme='light'])[data-accent='tide'] { --n-accent: #8fc0d9; --n-accent-soft: #23343d; --n-accent-text: #0f222b; }
+  :root:not([data-theme='light'])[data-accent='clay'] { --n-accent: #d9b79a; --n-accent-soft: #3a2f26; --n-accent-text: #2a1c10; }
+  :root:not([data-theme='light'])[data-accent='moss'] { --n-accent: #b5c78f; --n-accent-soft: #2e3424; --n-accent-text: #1a2410; }
+}
+:root[data-theme='dark'][data-accent='dusk'] { --n-accent: #b8abe6; --n-accent-soft: #312c45; --n-accent-text: #1b1630; }
+:root[data-theme='dark'][data-accent='tide'] { --n-accent: #8fc0d9; --n-accent-soft: #23343d; --n-accent-text: #0f222b; }
+:root[data-theme='dark'][data-accent='clay'] { --n-accent: #d9b79a; --n-accent-soft: #3a2f26; --n-accent-text: #2a1c10; }
+:root[data-theme='dark'][data-accent='moss'] { --n-accent: #b5c78f; --n-accent-soft: #2e3424; --n-accent-text: #1a2410; }
+
+:root[data-font='dyslexic'] { --n-font: var(--n-font-dyslexic); letter-spacing: 0.02em; word-spacing: 0.08em; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion='on']) { --n-motion: 0; }
+}
+:root[data-motion='off'] { --n-motion: 0; }
+
 /* High contrast */
-:root[data-contrast='high'] {
+/* Repeated :root raises specificity so high contrast always beats dark mode + theme accents. */
+:root:root:root[data-contrast='high'] {
   --n-bg: #ffffff;
   --n-surface: #ffffff;
   --n-surface-2: #f2f2f2;
@@ -75,20 +103,10 @@
   --n-text-muted: #262626;
   --n-accent: #1f5a3e;
   --n-accent-soft: #dff0e6;
+  --n-accent-text: #ffffff;
+  --n-sun: #7a5a1c;
+  --n-sun-soft: #f6eedd;
   --n-calm: #3f2f86;
   --n-calm-soft: #e8e3fb;
   --n-focus: #0b4fd6;
 }
-
-/* Theme accents (unlockable, cosmetic only) */
-:root[data-accent='dusk'] { --n-accent: #6d5f9c; --n-accent-soft: #ece8f5; }
-:root[data-accent='tide'] { --n-accent: #42718b; --n-accent-soft: #e2edf3; }
-:root[data-accent='clay'] { --n-accent: #8e6849; --n-accent-soft: #f3ebe4; }
-:root[data-accent='moss'] { --n-accent: #5c6d3d; --n-accent-soft: #eef0e4; }
-
-:root[data-font='dyslexic'] { --n-font: var(--n-font-dyslexic); letter-spacing: 0.02em; word-spacing: 0.08em; }
-
-@media (prefers-reduced-motion: reduce) {
-  :root:not([data-motion='on']) { --n-motion: 0; }
-}
-:root[data-motion='off'] { --n-motion: 0; }

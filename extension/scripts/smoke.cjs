@@ -161,6 +161,16 @@ function testPage() {
     check('crisis phrase never stored', !/want to be alive anymore/i.test(all));
     await panel.getByRole('button', { name: 'Back to Nudge' }).click();
 
+    // a real tester typed this into "I'm stuck" and got a coaching step — must show care instead
+    await panel.getByRole('button', { name: 'Nudge home' }).click();
+    await panel.getByLabel(/Or type it|What is it/).fill('i am done with my life, i am so bad');
+    await panel.getByRole('button', { name: 'Help me start', exact: true }).click();
+    await panel.getByText(/Tele-MANAS/).waitFor({ timeout: 10000 });
+    const typed = JSON.stringify(await sw.evaluate(async () => chrome.storage.local.get(null)));
+    check('typed "done with my life" shows support, no step, nothing stored', (await panel.locator('.step-text').count()) === 0 && !/done with my life/i.test(typed));
+    await panel.screenshot({ animations: 'disabled', path: path.join(outDir, '15b-safety-typed.png'), fullPage: true });
+    await panel.getByRole('button', { name: 'Back to Nudge' }).click();
+
     // settings + dark + literal
     await panel.getByRole('button', { name: 'Settings' }).click();
     await panel.getByRole('heading', { name: 'Settings' }).waitFor();

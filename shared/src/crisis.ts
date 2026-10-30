@@ -65,6 +65,15 @@ const HIGH_RISK: RegExp[] = [
   /\bno\s+reason\s+to\s+(?:live|be\s+alive|go\s+on|keep\s+going)\b/i,
   /\bno\s+(?:reason|point)\s+(?:in\s+|to\s+)?(?:living|being\s+alive)\b/i,
   /\bnot\s+be\s+here\s+any\s*more\b/i,
+  /\b(?:i'?m|i\s+am|im)\s+(?:so\s+|just\s+|really\s+|totally\s+|honestly\s+)?(?:done|finished|over)\s+with\s+(?:my\s+)?(?:life|living|being\s+alive|existing|this\s+life|this\s+world)\b/i,
+  /\bdone\s+with\s+(?:my\s+)?(?:life|living|being\s+alive|existing)\b/i,
+  /\b(?:tired|sick)\s+of\s+(?:living|being\s+alive|existing|life)\b/i,
+  /\b(?:my\s+)?life\s+is\s+(?:over|finished|done)\b/i,
+  /\bready\s+to\s+(?:die|end\s+it)\b/i,
+  /\bwant\s+(?:to\s+)?(?:end|stop)\s+(?:it\s+all|my\s+life|living|existing)\b/i,
+  /\bwon'?t\s+be\s+(?:around|here|alive)\s+(?:much\s+longer|tomorrow|any\s*more|for\s+long)\b/i,
+  /\bgoodbye\s+(?:forever|world|cruel\s+world)\b/i,
+  /\b(?:should|deserve\s+to)\s+(?:just\s+)?die\b/i,
 ];
 
 /** Tier 2 — hopelessness, disappearance and burden language. */
@@ -95,6 +104,18 @@ const HOPELESSNESS: RegExp[] = [
   /\b(?:can'?t|cannot)\s+(?:take|do)\s+(?:this|it)\s+any\s*more\b/i,
   /\bnothing\s+(?:matters|will\s+ever\s+get\s+better)\b/i,
   /\bgive\s+up\s+on\s+(?:life|everything|myself)\b/i,
+  /\b(?:i'?m|i\s+am|im)\s+(?:so\s+|such\s+a\s+|just\s+a\s+|a\s+|just\s+|completely\s+|totally\s+|really\s+)?(?:worthless|useless|a\s+failure|a\s+waste(?:\s+of\s+space)?|a\s+disappointment|pathetic|a\s+mistake)\b/i,
+  /\b(?:i'?m|i\s+am|im)\s+so\s+(?:bad|stupid|dumb)\s*(?:[,.!]|$)/i,
+  /\b(?:i'?m|i\s+am|im)\s+(?:so\s+)?done\s+with\s+everything\b/i,
+  /\bcan'?t\s+live\s+like\s+this\b/i,
+  /\bi\s+(?:ruin|mess\s+up|destroy)\s+everything\b/i,
+  /\beveryone\s+hates\s+me\b/i,
+  /\bnothing\s+left\s+(?:for\s+me|to\s+live\s+for)\b/i,
+  /\b(?:what'?s|whats)\s+(?:even\s+)?the\s+point\s+of\s+me\b/i,
+  /\bcan'?t\s+do\s+life\s+any\s*more\b/i,
+  /\b(?:so\s+)?empty\s+inside\b/i,
+  /\bthink(?:ing)?\s+about\s+not\s+being\s+(?:here|alive|around)\b/i,
+  /\b(?:world|everyone|everybody)\s+(?:is|would\s+be|'d\s+be)\s+better\s+without\s+me\b/i,
 ];
 
 export type CrisisLevel = 'none' | 'concern' | 'high';

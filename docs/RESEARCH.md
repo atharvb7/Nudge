@@ -79,6 +79,12 @@ These are the notes behind the main design choices. We tried to be honest about 
 * Common hyperbole doesn't trigger it ("this assignment is killing me", "dead tired", "kill the process").
 * Explicit self-harm language always triggers it, even when it might be hyperbole. We err towards care.
 * When it triggers, task coaching stops, the reply is warm, and resources are shown. The text is never stored.
+* **Why it isn't just the LLM:** the safety check never depends on an LLM. It has to work offline, instantly, and the same way every time, even when no model is running. It uses three layers:
+  1. **On-device phrase patterns** (`shared/src/crisis.ts`). These run before anything leaves the browser.
+  2. **The same patterns on the backend** (`backend/app/safety.py`). The two are kept identical by a shared test set of 120+ phrases, including Hinglish and typos.
+  3. **A meaning-based safety net** on the backend, used when MiniLM is installed. It compares each sentence with crisis examples and with study-stress examples, so paraphrases no pattern lists can still be caught ("I can't do life anymore", "the world is better without me").
+* **What a real tester found:** "i am done with my life, i am so bad" slipped past the first version and got a coaching step. It and its variants are now regression tests, and the meaning-based layer was added because fixed phrase lists will always miss some wording.
+* **Limits we state honestly:** no automatic check is perfect. The safety screen always offers resources, and Settings shows the helpline numbers, so help is reachable even when detection misses.
 * India default: **Tele-MANAS 14416 / 1-800-891-4416**. It's free, 24×7 and available in 20+ languages, run under NIMHANS for the Ministry of Health & Family Welfare. The region can be changed in settings.
 * Sources: [IIT Kanpur counselling – Tele-MANAS](https://iitk.ac.in/counsel/TeleManas.php), [JIPMER – Tele-MANAS](https://jipmer.edu.in/Tele-MANAS), [Vikaspedia](https://en.vikaspedia.in/viewcontent/health/mental-health/tele-manas?lgn=en)
 

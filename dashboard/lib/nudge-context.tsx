@@ -105,7 +105,7 @@ export function NudgeProvider({ children }: { children: ReactNode }) {
         if (req.type !== 'getSnapshot' && req.type !== 'exportData') await load();
         return data;
       } catch (e) {
-        if (src.kind === 'extension' && e instanceof Error && e.message === 'timeout') setStatus('disconnected');
+        if (src.kind === 'extension' && e instanceof Error && (e.message === 'timeout' || e.message === 'extension-reloaded')) setStatus('disconnected');
         throw e;
       }
     },

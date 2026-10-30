@@ -77,6 +77,20 @@ POSITIVES = [
     "aatmahatya ke baare mein soch raha hu",
     "jeene ka mann nahi karta",
     "zindagi khatam karna chahta hu",
+    # reported by a tester / paraphrases
+    'i am done with my life, i am so bad',
+    "I'm done with life",
+    'im so done with everything',
+    "I'm so tired of living",
+    'my life is over',
+    "I'm worthless",
+    'I am a failure',
+    "I won't be around much longer",
+    "I feel like there's nothing left for me",
+    "I can't do life anymore",
+    "I'm so empty inside",
+    'I think about not being here',
+    'the world is better without me',
 ]
 
 NEGATIVES = [
@@ -119,6 +133,12 @@ NEGATIVES = [
     "ugh I hate this assignment",
     "i'm drowning in work",
     "I want to disappear into a book for a while"
+    "I'm so bad at maths",
+    'im done with this assignment',
+    'done with my homework for today',
+    "I'm done with my essay finally",
+    'this lab is over finally',
+    "I'm tired of this course",
 ]
 
 
@@ -134,3 +154,18 @@ def test_negative(text):
 
 def test_set_is_large_enough():
     assert len(POSITIVES) + len(NEGATIVES) >= 60
+
+
+@pytest.mark.skipif(not __import__("os").environ.get("NUDGE_TEST_MINILM"), reason="needs MiniLM (set NUDGE_TEST_MINILM=1)")
+def test_semantic_net_catches_paraphrases_but_not_study_stress(monkeypatch, tmp_path):
+    monkeypatch.setenv("NUDGE_EMBEDDINGS", "auto")
+    monkeypatch.setenv("NUDGE_CHROMA_DIR", str(tmp_path))
+    from app import retrieval
+    from app.safety import _semantic_hit
+
+    retrieval.warm_up(blocking=True)
+    assert retrieval.semantic_model() is not None
+    for t in ["what is even the point of me being here", "nobody needs me"]:
+        assert _semantic_hit(t), t
+    for t in ["I'm stuck on my DBMS assignment", "this lecture is so boring", "I'm tired, need a nap", "I'm not suicidal, just really tired"]:
+        assert not _semantic_hit(t), t

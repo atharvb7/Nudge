@@ -250,3 +250,9 @@ def similarities(query: str) -> dict[str, float]:
                 _keyword = KeywordRetriever(load_cards())
             kw = _keyword
         return kw.similarities(query)
+
+
+def semantic_model():
+    """The loaded SentenceTransformer, or None while loading / unavailable."""
+    r = _semantic
+    return getattr(r, "model", None) if r is not None else None
